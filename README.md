@@ -51,4 +51,4 @@ docker pull negronnie/zapprint-frontend:latest
 
 ## Status
 
-- Fase 0 — definição do produto e estrutura do repositório: em andamento.
+- Fase 0 — definição do produto e estrutura do repositório (CI, release e imagens): em andamento.
