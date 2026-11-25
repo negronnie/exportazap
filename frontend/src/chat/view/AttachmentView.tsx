@@ -5,7 +5,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import type { SourceExport } from '../../import/readSource.ts'
 import { isVisualMedia, useMedia } from '../media.ts'
 import type { AttachmentKind, Location, Message } from '../model.ts'
-import { useChat } from '../store.ts'
+import { useChat, useRedactor } from '../store.ts'
 import { parseVCard, type ContactCard } from '../vcard.ts'
 import { useLightbox } from './lightbox.ts'
 import { VoicePlayer } from './VoicePlayer.tsx'
@@ -22,9 +22,11 @@ const MISSING_LABELS: Record<AttachmentKind, string> = {
   unknown: 'Mídia não incluída',
 }
 
+// File names can carry names and numbers (`Ana Souza.vcf`), so they are redacted like any text.
 function FileName({ name }: { name: string | null }) {
+  const redactor = useRedactor()
   if (!name) return null
-  return <p className="mt-0.5 truncate px-1 text-[11px] text-muted">{name}</p>
+  return <p className="mt-0.5 truncate px-1 text-[11px] text-muted">{redactor.text(name)}</p>
 }
 
 function Card({ icon, title, detail, action }: { icon: ReactNode; title: string; detail?: string; action?: ReactNode }) {
@@ -46,6 +48,7 @@ function size(bytes: number) {
 }
 
 function ContactView({ url, fileName }: { url: string; fileName: string }) {
+  const redactor = useRedactor()
   const [card, setCard] = useState<ContactCard | null>(null)
   useEffect(() => {
     let current = true
@@ -59,8 +62,8 @@ function ContactView({ url, fileName }: { url: string; fileName: string }) {
   return (
     <Card
       icon={<UserRound size={28} />}
-      title={card?.name || fileName.replace(/\.vcf$/i, '')}
-      detail={card?.phones.join(' · ')}
+      title={redactor.text(card?.name || fileName.replace(/\.vcf$/i, ''))}
+      detail={card ? redactor.text(card.phones.join(' · ')) : undefined}
     />
   )
 }
@@ -82,6 +85,7 @@ export function LocationView({ location }: { location: Location }) {
 
 function Present({ message, source, url }: { message: Message; source: SourceExport; url: string }) {
   const openLightbox = useLightbox((state) => state.open)
+  const redactor = useRedactor()
   const attachment = message.attachment!
   const fileName = attachment.fileName!
   switch (attachment.kind) {
@@ -111,7 +115,7 @@ function Present({ message, source, url }: { message: Message; source: SourceExp
     case 'contact':
       return <ContactView url={url} fileName={fileName} />
     default: {
-      const name = attachment.displayName ?? fileName
+      const name = redactor.text(attachment.displayName ?? fileName)
       const extension = name.includes('.') ? name.slice(name.lastIndexOf('.') + 1).toUpperCase() : ''
       const details = [
         attachment.pages !== undefined && `${attachment.pages} ${attachment.pages === 1 ? 'página' : 'páginas'}`,
@@ -135,6 +139,7 @@ function Present({ message, source, url }: { message: Message; source: SourceExp
 }
 
 export function AttachmentView({ message }: { message: Message }) {
+  const redactor = useRedactor()
   const source = useChat((state) => state.imported?.source)
   const attachment = message.attachment!
   const media = useMedia(source, attachment.fileName)
@@ -145,7 +150,7 @@ export function AttachmentView({ message }: { message: Message }) {
         <Card
           icon={<ImageOff size={24} />}
           title={MISSING_LABELS[attachment.kind]}
-          detail={attachment.displayName ?? (attachment.fileName ? undefined : 'não veio na exportação')}
+          detail={attachment.displayName ? redactor.text(attachment.displayName) : attachment.fileName ? undefined : 'não veio na exportação'}
         />
         <FileName name={attachment.fileName} />
       </div>
