@@ -19,6 +19,7 @@
   --notice: #ffffff;
   --link: #027eb5;
   --chip: rgb(0 0 0 / 5%);
+  --wallpaper: url('./assets/fundo-claro.svg');
   color-scheme: light;
 }
 
@@ -40,6 +41,7 @@
     --notice: #182229;
     --link: #53bdeb;
     --chip: rgb(255 255 255 / 6%);
+    --wallpaper: url('./assets/fundo-escuro.svg');
     color-scheme: dark;
   }
 }
@@ -61,6 +63,7 @@
   --notice: #182229;
   --link: #53bdeb;
   --chip: rgb(255 255 255 / 6%);
+  --wallpaper: url('./assets/fundo-escuro.svg');
   color-scheme: dark;
 }
 
@@ -89,4 +92,11 @@ body {
   background: var(--app);
   color: var(--text);
   font-family: var(--font-sans);
+}
+
+/* Our own doodles over the chat color (ADR 0006); the tile repeats seamlessly. */
+.bg-wallpaper {
+  background-color: var(--chat);
+  background-image: var(--wallpaper);
+  background-size: 340px;
 }

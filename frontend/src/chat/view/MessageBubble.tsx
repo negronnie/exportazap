@@ -1,5 +1,6 @@
 import { Ban, BarChart3, MapPin, Paperclip } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { isEmojiOnly, useEmojiMap, withEmoji, type EmojiMap } from '../emoji/emoji.tsx'
 import type { AttachmentKind, Message } from '../model.ts'
 import { formatTime } from '../summary.ts'
 
@@ -17,15 +18,16 @@ const KIND_LABELS: Record<AttachmentKind, string> = {
 
 const URL_PATTERN = /(https?:\/\/[^\s<>]+[^\s<>.,;:!?)\]'"])/g
 
-/** Message text with its links clickable; everything else stays plain text. */
-function linkify(text: string): ReactNode[] {
-  return text.split(URL_PATTERN).map((part, i) =>
+/** Message text with its links clickable and its emoji drawn with the bundled images. */
+function richText(text: string, emoji: EmojiMap | null): ReactNode[] {
+  const large = isEmojiOnly(text)
+  return text.split(URL_PATTERN).flatMap((part, i) =>
     i % 2 === 1 ? (
       <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-link underline">
         {part}
       </a>
     ) : (
-      part
+      withEmoji(part, emoji, String(i), large)
     ),
   )
 }
@@ -91,6 +93,7 @@ interface Props {
 
 export function MessageBubble({ message, outgoing, firstOfRun, authorColor }: Props) {
   const time = formatTime(message.at)
+  const emoji = useEmojiMap()
   return (
     <div className={`flex px-3 md:px-[6%] ${outgoing ? 'justify-end' : 'justify-start'} ${firstOfRun ? 'pt-2' : 'pt-0.5'}`}>
       <div
@@ -101,7 +104,7 @@ export function MessageBubble({ message, outgoing, firstOfRun, authorColor }: Pr
         {firstOfRun && <Tail outgoing={outgoing} />}
         {authorColor && firstOfRun && (
           <p className="mb-0.5 truncate text-[12.8px] font-medium" style={{ color: authorColor }}>
-            {message.author}
+            {withEmoji(message.author, emoji, "a")}
           </p>
         )}
         {message.attachment && <AttachmentChip message={message} />}
@@ -123,7 +126,7 @@ export function MessageBubble({ message, outgoing, firstOfRun, authorColor }: Pr
           <div className="h-3" />
         ) : (
           <p className="break-words whitespace-pre-wrap">
-            {linkify(message.text)}
+            {richText(message.text, emoji)}
             {/* Room for the time, which sits in the bottom corner. */}
             <span className={`inline-block ${message.edited ? 'w-24' : 'w-12'}`} />
           </p>

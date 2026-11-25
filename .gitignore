@@ -32,3 +32,6 @@ Desktop.ini
 
 # Real WhatsApp exports used in tests (never committed)
 fixtures/privadas/
+
+# Noto Emoji images, copied from emoji-datasource-google at build time
+frontend/public/emoji/
