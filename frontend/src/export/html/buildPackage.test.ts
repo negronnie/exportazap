@@ -10,7 +10,7 @@ import { buildPackage } from './buildPackage.ts'
 
 const TEMPLATE = '<!doctype html><html><body><div id="viewer"></div><!-- exportazap-data --><script type="module">/* viewer */</script></body></html>'
 
-async function packageFor(settings: { aliases: Record<string, string>; maskNumbers: boolean }, hidden: number[] = []) {
+async function packageFor(settings: { aliases: Record<string, string>; maskNumbers: boolean }, hidden: number[] = [], text?: string) {
   const { name, folder } = syntheticExport('android-ptbr-individual')
   const imported = await importExport([await zippedExport(folder, name)])
   const document = buildExport({
@@ -23,6 +23,8 @@ async function packageFor(settings: { aliases: Record<string, string>; maskNumbe
     theme: 'dark',
     generatedAt: new Date(2024, 0, 1),
   })
+  // A message with text that could break the page, in place of the first one.
+  if (text !== undefined && document.entries[1].kind === 'message') document.entries[1] = { ...document.entries[1], text }
   const zip = await buildPackage({
     document,
     source: imported.source,
@@ -73,8 +75,17 @@ describe('buildPackage', () => {
     expect(data.media[3]).toBeUndefined()
   })
 
-  it('keeps a message that contains a closing script tag inside the data', async () => {
-    const { html } = await packageFor({ aliases: {}, maskNumbers: false })
+  it('keeps text that could close the script or expand in a replacement exactly as written', async () => {
+    const text = "fim </script><b>x</b> $& $' $` US$$5"
+    const { html, data } = await packageFor({ aliases: {}, maskNumbers: false }, [], text)
     expect(html.match(/<\/script>/g)).toHaveLength(2)
+    const entry = data.document.entries[1]
+    expect(entry.kind === 'message' && entry.text).toBe(text)
+  })
+
+  it('encodes the media paths the page uses, keeping the file names in the zip', async () => {
+    const { files, data } = await packageFor({ aliases: {}, maskNumbers: false })
+    expect(data.media[8]).toBe('media/Card%C3%A1pio.pdf')
+    expect(files.has('Ana Souza 2023-10-14/media/Cardápio.pdf')).toBe(true)
   })
 })

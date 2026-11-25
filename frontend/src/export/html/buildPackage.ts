@@ -50,7 +50,8 @@ export async function buildPackage(input: PackageInput): Promise<Blob> {
     if (used.has(name.toLowerCase())) name = `${entry.index}-${name}`
     used.add(name.toLowerCase())
     const path = `media/${name}`
-    media[entry.index] = path
+    // The page refers to the file by URL: `#`, `%` and spaces in the name must be encoded there.
+    media[entry.index] = `media/${encodeURIComponent(name)}`
     if (entry.attachment.kind === 'contact' && redacting) {
       // A contact card holds names and numbers too: it goes out rewritten with the redaction. A card
       // without a name takes the (already redacted) name of its file.
@@ -85,7 +86,8 @@ export async function buildPackage(input: PackageInput): Promise<Blob> {
   const data: ViewerData = { document: { ...doc, entries, generatedAt: doc.generatedAt.toISOString() }, media, emoji }
   const slot = '<!-- exportazap-data -->'
   if (!template.includes(slot)) throw new Error('ExportaZap: the viewer page has no data slot')
-  const html = template.replace(slot, `<script type="application/json" id="${DATA_ELEMENT_ID}">${serializeViewerData(data)}</script>`)
+  // A function, not a string: in a replacement string, `$&` or `$'` typed in a message would expand.
+  const html = template.replace(slot, () => `<script type="application/json" id="${DATA_ELEMENT_ID}">${serializeViewerData(data)}</script>`)
 
   const writer = new ZipWriter(new BlobWriter('application/zip'))
   await writer.add(`${folder}/index.html`, new TextReader(html))
