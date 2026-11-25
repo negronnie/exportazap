@@ -1,0 +1,127 @@
+name: Gerar Release e Tag
+
+# Disparado à mão (Actions → Gerar Release e Tag → Run workflow). Roda o CI, calcula a versão
+# pelos commits desde a última tag v* (a primeira é a v0.1.0), atualiza o CHANGELOG.md, a versão
+# do frontend e o selo do README, cria a tag e a release no GitHub e publica as imagens dessa
+# versão no Docker Hub.
+
+on:
+  workflow_dispatch:
+    inputs:
+      major:
+        description: "Nova versão major (X.0.0)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: release-flow
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  testes:
+    name: Validar testes
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    name: Gerar release com git-cliff
+    needs: [testes]
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.git-cliff.outputs.version }}
+    steps:
+      - name: Checkout com histórico completo
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+
+      - name: Calcular tipo de incremento da versão
+        id: incremento
+        env:
+          MAJOR: ${{ inputs.major }}
+        run: |
+          # Checkbox major sobe o major; quebra (feat!:, fix(escopo)!: ou rodapé BREAKING CHANGE) sobe o minor; o resto sobe o patch
+          ULTIMA_TAG=$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)
+          INTERVALO="${ULTIMA_TAG:+$ULTIMA_TAG..}HEAD"
+
+          if [ "$MAJOR" = "true" ]; then
+            TIPO=major
+          elif git log "$INTERVALO" --format=%s | grep -qE '^[[:alnum:]_-]+(\([^)]*\))?!:' \
+            || git log "$INTERVALO" --format=%b | grep -qE '^BREAKING[ -]CHANGE:'; then
+            TIPO=minor
+          else
+            TIPO=patch
+          fi
+
+          echo "Incremento desde ${ULTIMA_TAG:-o início}: $TIPO"
+          echo "tipo=$TIPO" >> "$GITHUB_OUTPUT"
+
+      - name: Gerar changelog e calcular versão
+        uses: orhun/git-cliff-action@v4
+        id: git-cliff
+        with:
+          config: cliff.toml
+          args: --bump ${{ steps.incremento.outputs.tipo }}
+        env:
+          OUTPUT: CHANGELOG.md
+          GITHUB_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+
+      - name: Gerar notas da versão atual
+        if: steps.git-cliff.outputs.version != ''
+        uses: orhun/git-cliff-action@v4
+        id: git-cliff-release
+        with:
+          config: cliff.toml
+          args: --unreleased --tag ${{ steps.git-cliff.outputs.version }} --strip header
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+
+      - name: Configurar Node 24
+        if: steps.git-cliff.outputs.version != ''
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: Atualizar a versão nos módulos
+        if: steps.git-cliff.outputs.version != ''
+        run: |
+          # Sem o prefixo 'v' (v1.1.0 -> 1.1.0)
+          VERSION_NUM="${{ steps.git-cliff.outputs.version }}"
+          VERSION_NUM="${VERSION_NUM#v}"
+          echo "Sincronizando a versão $VERSION_NUM..."
+
+          npm --prefix frontend version "$VERSION_NUM" --no-git-tag-version --allow-same-version
+          sed -i -E "s#(badge/vers%C3%A3o-v)[0-9]+\.[0-9]+\.[0-9]+#\1${VERSION_NUM}#" README.md
+
+      - name: Commitar a versão
+        if: steps.git-cliff.outputs.version != ''
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git add CHANGELOG.md README.md frontend/package.json frontend/package-lock.json
+          git commit -m "chore(release): ${{ steps.git-cliff.outputs.version }}" || echo "Nenhuma alteração para commitar"
+          git push origin HEAD:${{ github.ref_name }}
+
+      - name: Publicar release e tag no GitHub
+        if: steps.git-cliff.outputs.version != ''
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.git-cliff.outputs.version }}
+          name: Release ${{ steps.git-cliff.outputs.version }}
+          body: ${{ steps.git-cliff-release.outputs.content }}
+          # A tag sai do commit da versão, não do commit do disparo.
+          target_commitish: ${{ github.ref_name }}
+          # Com o GITHUB_TOKEN a tag não dispara o "Publicar Imagens" de novo: o job abaixo o chama.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  imagens:
+    name: Publicar imagens
+    needs: [release]
+    if: needs.release.outputs.version != ''
+    uses: ./.github/workflows/images.yml
+    with:
+      tag: ${{ needs.release.outputs.version }}
+    secrets: inherit
