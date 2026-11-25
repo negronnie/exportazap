@@ -3,6 +3,7 @@ import { useChat } from './chat/store.ts'
 import { ChatScreen } from './screens/ChatScreen.tsx'
 import { ImportScreen } from './screens/ImportScreen.tsx'
 import { SummaryScreen } from './screens/SummaryScreen.tsx'
+import { PrintView } from './export/print/PrintView.tsx'
 
 function App() {
   const stage = useChat((state) => state.stage)
@@ -17,7 +18,13 @@ function App() {
   }, [loaded])
 
   if (stage === 'summary') return <SummaryScreen />
-  if (stage === 'chat') return <ChatScreen />
+  if (stage === 'chat')
+    return (
+      <>
+        <ChatScreen />
+        <PrintView />
+      </>
+    )
   return <ImportScreen />
 }
 
