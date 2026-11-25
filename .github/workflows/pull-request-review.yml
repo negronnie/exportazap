@@ -1,0 +1,131 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+jobs:
+  claude-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # required to post the outcome comment on the PR
+      issues: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      # continue-on-error so the outcome comment below ALWAYS gets posted;
+      # a later step re-fails the job if the review itself failed.
+      #
+      # Background tasks are disabled so every subagent of the review runs in the
+      # foreground. With them enabled, the plugin's first subagent (the eligibility
+      # check) went to the background, Claude ended its turn "waiting" for it, and
+      # the run finished in seconds, green, without reviewing anything.
+      - name: Run Claude Code Review
+        id: claude-review
+        continue-on-error: true
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          plugin_marketplaces: "https://github.com/anthropics/claude-code.git"
+          plugins: "code-review@claude-code-plugins"
+          settings: |
+            {
+              "env": {
+                "CLAUDE_CODE_DISABLE_BACKGROUND_TASKS": "1"
+              }
+            }
+          prompt: |
+            /code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}
+
+            Este PR pode já ter um comentário de revisão de um commit anterior: isso não o
+            torna inelegível. Revise o estado atual do PR.
+
+            Só escreva a mensagem final depois de receber o resultado de todos os subagentes
+            que disparar.
+
+            Quando a revisão estiver concluída, finalize sua mensagem final com um
+            resumo de resultado em markdown: uma checklist das dimensões revisadas (exatidão,
+            segurança, testes, convenções), os apontamentos quantificados por severidade e um
+            veredito de uma linha que comece com "Veredito:", como "Veredito: ✅ Sem impeditivos"
+            ou "Veredito: ❌ N problemas para resolver". Se o PR não couber em revisão (fechado,
+            rascunho ou trivial), diga o motivo e termine com "Veredito: ⏭️ Sem revisão".
+            Uma resposta sem a linha do veredito é tratada como revisão que não aconteceu e
+            reprova o job.
+
+      # Deterministic outcome comment: does NOT depend on Claude choosing to
+      # comment. Extracts Claude's final message from the execution log and
+      # posts it (with the job status) via gh. Runs on success AND failure.
+      # A final message without the verdict line means the run ended before
+      # reviewing: the comment says so and the last step fails the job.
+      # No execution file at all means the action skipped itself, which it does
+      # when the PR changes this workflow file (it only runs with the same
+      # content as the default branch): that is reported, not failed.
+      - name: Post outcome comment on PR
+        id: outcome
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXECUTION_FILE: ${{ steps.claude-review.outputs.execution_file }}
+          REVIEW_OUTCOME: ${{ steps.claude-review.outcome }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          SUMMARY=""
+          RAN=false
+          if [ -n "$EXECUTION_FILE" ] && [ -f "$EXECUTION_FILE" ]; then
+            RAN=true
+            SUMMARY=$(jq -r '
+              [.[] | select(.type == "assistant")] | last
+              | .message.content // []
+              | map(select(.type == "text") | .text)
+              | join("\n\n")
+            ' "$EXECUTION_FILE" 2>/dev/null || true)
+          fi
+
+          REVIEWED=false
+          if [ "$RAN" != "true" ]; then
+            REVIEWED=skipped
+          elif printf '%s' "$SUMMARY" | grep -qi 'veredito'; then
+            REVIEWED=true
+          fi
+          echo "reviewed=$REVIEWED" >> "$GITHUB_OUTPUT"
+
+          if [ "$REVIEW_OUTCOME" != "success" ]; then
+            STATUS_LINE="❌ Review job **failed** — see the [run log]($RUN_URL)."
+          elif [ "$REVIEWED" = "skipped" ]; then
+            STATUS_LINE="⏭️ Revisão **não executada**: a action pulou a execução. Acontece quando o PR altera este workflow — ela só roda com o arquivo igual ao da branch padrão — e volta ao normal depois do merge. Veja o [run log]($RUN_URL)."
+          elif [ "$REVIEWED" = "true" ]; then
+            STATUS_LINE="✅ Review Completa."
+          else
+            STATUS_LINE="⚠️ A execução terminou **sem revisar** (resposta sem veredito) — veja o [run log]($RUN_URL)."
+          fi
+
+          {
+            echo "## 🤖 Claude Code Review — Resultado"
+            echo
+            echo "$STATUS_LINE"
+            echo
+            if [ -n "$SUMMARY" ]; then
+              echo "$SUMMARY"
+            elif [ "$REVIEWED" != "skipped" ]; then
+              echo "_Nenhum resumo foi gerado pela execução da revisão.._"
+            fi
+            echo
+            echo "---"
+            echo "_Run: [$RUN_URL]($RUN_URL) · commit ${GITHUB_SHA:0:7}_"
+          } > /tmp/outcome-comment.md
+
+          # Update our previous outcome comment when possible; otherwise create one.
+          gh pr comment "$PR_NUMBER" --repo "$REPO" --edit-last --body-file /tmp/outcome-comment.md \
+            || gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file /tmp/outcome-comment.md
+
+      - name: Fail the job if the review failed or did not happen
+        if: steps.claude-review.outcome == 'failure' || steps.outcome.outputs.reviewed == 'false'
+        run: exit 1

@@ -1,0 +1,35 @@
+name: CI
+
+# Roda em cada PR e em cada push na main, e é chamado pelo "Gerar Release e Tag" antes de
+# gerar a versão. Todos os workflows rodam nos runners do GitHub (ubuntu-latest).
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  workflow_call:
+
+concurrency:
+  # O evento entra no grupo para a chamada da release não cancelar o CI do push na main.
+  group: ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend (lint, testes e build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
