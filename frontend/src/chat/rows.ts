@@ -5,7 +5,7 @@
 import type { Entry, LocalDateTime, Message, SystemNotice } from './model.ts'
 
 export type Row =
-  | { kind: 'date'; key: string; day: LocalDateTime }
+  | { kind: 'date'; key: string; day: LocalDateTime; /** First entry of the day. */ index: number }
   | { kind: 'notice'; key: string; notice: SystemNotice }
   | { kind: 'message'; key: string; message: Message; outgoing: boolean; firstOfRun: boolean }
 
@@ -18,7 +18,7 @@ export function buildRows(entries: Entry[], self: string | null): Row[] {
   for (const entry of entries) {
     if (dayOf(entry.at) !== day) {
       day = dayOf(entry.at)
-      rows.push({ kind: 'date', key: `d${day}`, day: entry.at })
+      rows.push({ kind: 'date', key: `d${day}`, day: entry.at, index: entry.index })
       previousAuthor = null
     }
     if (entry.kind === 'notice') {
@@ -37,3 +37,6 @@ export function buildRows(entries: Entry[], self: string | null): Row[] {
   }
   return rows
 }
+
+/** The entry a row stands for; a date chip stands for the first entry of its day. */
+export const rowEntry = (row: Row) => (row.kind === 'date' ? row.index : row.kind === 'notice' ? row.notice.index : row.message.index)

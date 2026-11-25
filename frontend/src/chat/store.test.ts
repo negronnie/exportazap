@@ -42,4 +42,16 @@ describe('chat store', () => {
     await useChat.getState().reset()
     expect(useChat.getState()).toMatchObject({ stage: 'idle', imported: null, self: null })
   })
+
+  it('starts the range on the whole chat and moves its ends from the messages', async () => {
+    const { name, folder } = syntheticExport('android-ptbr-individual')
+    await useChat.getState().importFiles([await zippedExport(folder, name)])
+    const total = useChat.getState().imported!.parsed.entries.length
+    expect(useChat.getState().range).toEqual({ start: 0, end: total - 1 })
+    useChat.getState().startRangeAt(3)
+    useChat.getState().endRangeAt(5)
+    expect(useChat.getState().range).toEqual({ start: 3, end: 5 })
+    useChat.getState().endRangeAt(1)
+    expect(useChat.getState().range).toEqual({ start: 1, end: 1 })
+  })
 })

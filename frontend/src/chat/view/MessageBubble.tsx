@@ -7,6 +7,7 @@ import { findMatches } from '../search.ts'
 import { formatTime } from '../summary.ts'
 import { isVisualMedia } from '../media.ts'
 import { AttachmentView, LocationView } from './AttachmentView.tsx'
+import { MessageMenu, type MenuAction } from './MessageMenu.tsx'
 
 const URL_PATTERN = /(https?:\/\/[^\s<>]+[^\s<>.,;:!?)\]'"])/g
 
@@ -85,9 +86,11 @@ interface Props {
   authorColor?: string
   /** Search query whose matches are marked in the text. */
   query?: string
+  /** Actions in the menu of the bubble. */
+  menu?: MenuAction[]
 }
 
-export function MessageBubble({ message, outgoing, firstOfRun, authorColor, query = '' }: Props) {
+export function MessageBubble({ message, outgoing, firstOfRun, authorColor, query = '', menu }: Props) {
   const time = formatTime(message.at)
   const emoji = useEmojiMap()
   const display = useDisplayName()
@@ -109,7 +112,7 @@ export function MessageBubble({ message, outgoing, firstOfRun, authorColor, quer
   return (
     <div className={`flex px-3 md:px-[6%] ${outgoing ? 'justify-end' : 'justify-start'} ${firstOfRun ? 'pt-2' : 'pt-0.5'}`}>
       <div
-        className={`relative max-w-[85%] text-[14.2px] leading-[19px] md:max-w-[65%] ${
+        className={`group relative max-w-[85%] text-[14.2px] leading-[19px] md:max-w-[65%] ${
           sticker
             ? ''
             : `rounded-lg px-1.5 pt-1.5 pb-2 shadow-sm ${outgoing ? 'bg-bubble-out' : 'bg-bubble-in'} ${
@@ -118,6 +121,7 @@ export function MessageBubble({ message, outgoing, firstOfRun, authorColor, quer
         }`}
       >
         {firstOfRun && !sticker && <Tail outgoing={outgoing} />}
+        {menu && <MessageMenu actions={menu} outgoing={outgoing} />}
         {authorColor && firstOfRun && (
           <p className="mb-0.5 truncate px-0.5 text-[12.8px] font-medium" style={{ color: authorColor }}>
             {withEmoji(display(message.author), emoji, 'a')}
