@@ -5,3 +5,5 @@
 *.ico binary
 *.jpg binary
 *.zip binary
+# Exports are kept byte for byte: iOS writes CRLF, and the tests read it.
+fixtures/** -text
