@@ -6,6 +6,7 @@ import type { LocalDateTime } from '../chat/model.ts'
 import { buildRows, type Row } from '../chat/rows.ts'
 import { useChat } from '../chat/store.ts'
 import { formatDate, summarize } from '../chat/summary.ts'
+import { Lightbox } from '../chat/view/Lightbox.tsx'
 import { MessageBubble } from '../chat/view/MessageBubble.tsx'
 import { useEmojiMap, withEmoji } from '../chat/emoji/emoji.tsx'
 import { useTheme } from '../theme.ts'
@@ -90,6 +91,7 @@ export function ChatScreen() {
           className="h-full"
         />
       </div>
+      <Lightbox />
     </main>
   )
 }

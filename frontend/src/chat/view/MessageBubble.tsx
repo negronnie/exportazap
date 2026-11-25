@@ -1,20 +1,11 @@
-import { Ban, BarChart3, MapPin, Paperclip } from 'lucide-react'
+import { Ban, BarChart3 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { isEmojiOnly, useEmojiMap, withEmoji, type EmojiMap } from '../emoji/emoji.tsx'
-import type { AttachmentKind, Message } from '../model.ts'
+import type { Message } from '../model.ts'
+import { useChat } from '../store.ts'
 import { formatTime } from '../summary.ts'
-
-const KIND_LABELS: Record<AttachmentKind, string> = {
-  image: 'Imagem',
-  video: 'Vídeo',
-  audio: 'Áudio',
-  voice: 'Mensagem de voz',
-  sticker: 'Figurinha',
-  gif: 'GIF',
-  document: 'Documento',
-  contact: 'Contato',
-  unknown: 'Mídia',
-}
+import { isVisualMedia } from '../media.ts'
+import { AttachmentView, LocationView } from './AttachmentView.tsx'
 
 const URL_PATTERN = /(https?:\/\/[^\s<>]+[^\s<>.,;:!?)\]'"])/g
 
@@ -29,21 +20,6 @@ function richText(text: string, emoji: EmojiMap | null): ReactNode[] {
     ) : (
       withEmoji(part, emoji, String(i), large)
     ),
-  )
-}
-
-/** Stand-in until the attachments get their own rendering (issue #15). */
-function AttachmentChip({ message }: { message: Message }) {
-  const attachment = message.attachment!
-  const name = attachment.displayName ?? attachment.fileName
-  return (
-    <div className="mb-1 flex items-center gap-2 rounded-md bg-chip px-2 py-1.5 text-sm">
-      <Paperclip size={16} className="shrink-0 text-muted" aria-hidden />
-      <span className="min-w-0">
-        <span className="block font-medium">{KIND_LABELS[attachment.kind]}</span>
-        <span className="block truncate text-xs text-muted">{name ?? 'mídia não incluída'}</span>
-      </span>
-    </div>
   )
 }
 
@@ -94,46 +70,70 @@ interface Props {
 export function MessageBubble({ message, outgoing, firstOfRun, authorColor }: Props) {
   const time = formatTime(message.at)
   const emoji = useEmojiMap()
+  const files = useChat((state) => state.imported?.source.files)
+  const attachment = message.attachment
+  const present = attachment?.fileName ? files?.has(attachment.fileName) === true : false
+  // A sticker that came with the export floats without a bubble, as in WhatsApp.
+  const sticker = attachment?.kind === 'sticker' && present
+  // Images and videos without a caption carry the time over the picture.
+  const timeOverMedia = attachment !== undefined && present && isVisualMedia(attachment.kind) && !message.text
+
+  const timeLabel = (
+    <>
+      {message.edited && 'Editada '}
+      {time}
+    </>
+  )
+
   return (
     <div className={`flex px-3 md:px-[6%] ${outgoing ? 'justify-end' : 'justify-start'} ${firstOfRun ? 'pt-2' : 'pt-0.5'}`}>
       <div
-        className={`relative max-w-[85%] rounded-lg px-2 pt-1.5 pb-2 text-[14.2px] leading-[19px] shadow-sm md:max-w-[65%] ${
-          outgoing ? 'bg-bubble-out' : 'bg-bubble-in'
-        } ${firstOfRun ? (outgoing ? 'rounded-tr-none' : 'rounded-tl-none') : ''}`}
+        className={`relative max-w-[85%] text-[14.2px] leading-[19px] md:max-w-[65%] ${
+          sticker
+            ? ''
+            : `rounded-lg px-1.5 pt-1.5 pb-2 shadow-sm ${outgoing ? 'bg-bubble-out' : 'bg-bubble-in'} ${
+                firstOfRun ? (outgoing ? 'rounded-tr-none' : 'rounded-tl-none') : ''
+              }`
+        }`}
       >
-        {firstOfRun && <Tail outgoing={outgoing} />}
+        {firstOfRun && !sticker && <Tail outgoing={outgoing} />}
         {authorColor && firstOfRun && (
-          <p className="mb-0.5 truncate text-[12.8px] font-medium" style={{ color: authorColor }}>
-            {withEmoji(message.author, emoji, "a")}
+          <p className="mb-0.5 truncate px-0.5 text-[12.8px] font-medium" style={{ color: authorColor }}>
+            {withEmoji(message.author, emoji, 'a')}
           </p>
         )}
-        {message.attachment && <AttachmentChip message={message} />}
+        {attachment && <AttachmentView message={message} />}
         {message.poll && <Poll message={message} />}
         {message.location && (
-          <a href={message.location.url} target="_blank" rel="noopener noreferrer" className="mb-1 flex items-center gap-1.5 underline">
-            <MapPin size={16} aria-hidden />
-            Localização
-          </a>
+          <div className="mb-1">
+            <LocationView location={message.location} />
+          </div>
         )}
         {message.deleted ? (
-          <p className="flex items-center gap-1.5 text-muted italic">
+          <p className="flex items-center gap-1.5 px-0.5 text-muted italic">
             <Ban size={14} aria-hidden />
             Mensagem apagada
             <span className="inline-block w-10" />
           </p>
-        ) : !message.text ? (
-          // Attachment, poll or location alone: just room for the time.
-          <div className="h-3" />
-        ) : (
-          <p className="break-words whitespace-pre-wrap">
+        ) : message.text ? (
+          <p className="px-0.5 break-words whitespace-pre-wrap">
             {richText(message.text, emoji)}
             {/* Room for the time, which sits in the bottom corner. */}
             <span className={`inline-block ${message.edited ? 'w-24' : 'w-12'}`} />
           </p>
+        ) : timeOverMedia || sticker ? null : (
+          <div className="h-3" />
         )}
-        <span className="absolute right-2 bottom-1 text-[11px] text-muted">
-          {message.edited && 'Editada '}
-          {time}
+        <span
+          className={
+            sticker
+              ? 'float-right mt-0.5 rounded-md bg-notice px-1.5 text-[11px] text-muted shadow-sm'
+              : timeOverMedia
+                ? 'absolute right-3 bottom-7 text-[11px] text-white [text-shadow:0_1px_2px_rgb(0_0_0/70%)]'
+                : 'absolute right-2 bottom-1 text-[11px] text-muted'
+          }
+        >
+          {timeLabel}
         </span>
       </div>
     </div>

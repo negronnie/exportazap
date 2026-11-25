@@ -6,6 +6,7 @@ import { guessSelf } from '../import/guessSelf.ts'
 import { importExport, missingAttachments, type ImportedChat } from '../import/importExport.ts'
 import { parseExport } from '../import/parseExport.ts'
 import { SourceError, type SourceErrorCode } from '../import/readSource.ts'
+import { releaseMedia } from './media.ts'
 import type { DateOrder } from './model.ts'
 
 export type Stage = 'idle' | 'reading' | 'summary' | 'chat'
@@ -37,7 +38,11 @@ export const useChat = create<ChatState>()((set, get) => ({
   asksDateOrder: false,
 
   async importFiles(files) {
-    await get().imported?.source.close()
+    const previous = get().imported?.source
+    if (previous) {
+      await releaseMedia(previous)
+      await previous.close()
+    }
     set({ stage: 'reading', imported: null, self: null, error: null })
     try {
       const imported = await importExport(files)
@@ -74,7 +79,11 @@ export const useChat = create<ChatState>()((set, get) => ({
   },
 
   async reset() {
-    await get().imported?.source.close()
+    const previous = get().imported?.source
+    if (previous) {
+      await releaseMedia(previous)
+      await previous.close()
+    }
     set({ stage: 'idle', imported: null, self: null, error: null, asksDateOrder: false })
   },
 }))
