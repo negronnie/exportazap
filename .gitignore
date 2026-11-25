@@ -38,3 +38,7 @@ frontend/public/emoji/
 
 # The viewer of the HTML package, built by `npm run build:viewer`
 frontend/public/viewer/
+
+# Playwright
+frontend/test-results/
+frontend/playwright-report/
