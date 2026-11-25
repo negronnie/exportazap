@@ -25,6 +25,7 @@ interface ChatState {
   confirmDateOrder(order: DateOrder): void
   setSelf(self: string | null): void
   openChat(): void
+  backToSummary(): void
   reset(): Promise<void>
 }
 
@@ -62,6 +63,10 @@ export const useChat = create<ChatState>()((set, get) => ({
 
   setSelf(self) {
     set({ self })
+  },
+
+  backToSummary() {
+    if (get().imported) set({ stage: 'summary' })
   },
 
   openChat() {
