@@ -2,7 +2,7 @@ import { Ban, BarChart3 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { isEmojiOnly, useEmojiMap, withEmoji, type EmojiMap } from '../emoji/emoji.tsx'
 import type { Message } from '../model.ts'
-import { useChat } from '../store.ts'
+import { useChat, useDisplayName } from '../store.ts'
 import { formatTime } from '../summary.ts'
 import { isVisualMedia } from '../media.ts'
 import { AttachmentView, LocationView } from './AttachmentView.tsx'
@@ -70,6 +70,7 @@ interface Props {
 export function MessageBubble({ message, outgoing, firstOfRun, authorColor }: Props) {
   const time = formatTime(message.at)
   const emoji = useEmojiMap()
+  const display = useDisplayName()
   const files = useChat((state) => state.imported?.source.files)
   const attachment = message.attachment
   const present = attachment?.fileName ? files?.has(attachment.fileName) === true : false
@@ -99,7 +100,7 @@ export function MessageBubble({ message, outgoing, firstOfRun, authorColor }: Pr
         {firstOfRun && !sticker && <Tail outgoing={outgoing} />}
         {authorColor && firstOfRun && (
           <p className="mb-0.5 truncate px-0.5 text-[12.8px] font-medium" style={{ color: authorColor }}>
-            {withEmoji(message.author, emoji, 'a')}
+            {withEmoji(display(message.author), emoji, "a")}
           </p>
         )}
         {attachment && <AttachmentView message={message} />}
