@@ -1,10 +1,24 @@
+import { useEffect } from 'react'
+import { useChat } from './chat/store.ts'
+import { ChatScreen } from './screens/ChatScreen.tsx'
+import { ImportScreen } from './screens/ImportScreen.tsx'
+import { SummaryScreen } from './screens/SummaryScreen.tsx'
+
 function App() {
-  return (
-    <main className="placeholder">
-      <h1>ExportaZap</h1>
-      <p>Conversas exportadas do WhatsApp, legíveis e prontas para compartilhar. Em construção.</p>
-    </main>
-  )
+  const stage = useChat((state) => state.stage)
+  const loaded = useChat((state) => state.imported !== null)
+
+  // Nothing is saved (ADR 0001): leaving the page loses the chat, so the browser asks first.
+  useEffect(() => {
+    if (!loaded) return
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault()
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [loaded])
+
+  if (stage === 'summary') return <SummaryScreen />
+  if (stage === 'chat') return <ChatScreen />
+  return <ImportScreen />
 }
 
 export default App

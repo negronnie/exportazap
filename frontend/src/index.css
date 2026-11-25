@@ -1,16 +1,84 @@
+@import 'tailwindcss';
+
+/* The WhatsApp palette (colors only: names, logos and the wallpaper art stay out, see ADR 0006).
+   The dark theme follows the system until the person picks one; data-theme on <html> wins. */
 :root {
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  color-scheme: light dark;
+  --app: #f0f2f5;
+  --panel: #ffffff;
+  --bar: #f0f2f5;
+  --chat: #efeae2;
+  --bubble-in: #ffffff;
+  --bubble-out: #d9fdd3;
+  --text: #111b21;
+  --muted: #667781;
+  --line: #e9edef;
+  --accent: #00a884;
+  --accent-strong: #008069;
+  --on-accent: #ffffff;
+  --danger: #ea0038;
+  --notice: #ffffff;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --app: #0c1317;
+    --panel: #111b21;
+    --bar: #202c33;
+    --chat: #0b141a;
+    --bubble-in: #202c33;
+    --bubble-out: #005c4b;
+    --text: #e9edef;
+    --muted: #8696a0;
+    --line: #222d34;
+    --accent: #00a884;
+    --accent-strong: #06cf9c;
+    --on-accent: #111b21;
+    --danger: #f15c6d;
+    --notice: #182229;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --app: #0c1317;
+  --panel: #111b21;
+  --bar: #202c33;
+  --chat: #0b141a;
+  --bubble-in: #202c33;
+  --bubble-out: #005c4b;
+  --text: #e9edef;
+  --muted: #8696a0;
+  --line: #222d34;
+  --accent: #00a884;
+  --accent-strong: #06cf9c;
+  --on-accent: #111b21;
+  --danger: #f15c6d;
+  --notice: #182229;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-app: var(--app);
+  --color-panel: var(--panel);
+  --color-bar: var(--bar);
+  --color-chat: var(--chat);
+  --color-bubble-in: var(--bubble-in);
+  --color-bubble-out: var(--bubble-out);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-on-accent: var(--on-accent);
+  --color-danger: var(--danger);
+  --color-notice: var(--notice);
+  --font-sans: 'Segoe UI', 'Helvetica Neue', Helvetica, 'Lucida Grande', Arial, Ubuntu, Cantarell, 'Fira Sans', sans-serif;
 }
 
 body {
   margin: 0;
-}
-
-.placeholder {
-  display: grid;
-  place-content: center;
-  min-height: 100vh;
-  padding: 0 16px;
-  text-align: center;
+  background: var(--app);
+  color: var(--text);
+  font-family: var(--font-sans);
 }
