@@ -3,22 +3,40 @@ import type { ReactNode } from 'react'
 import { isEmojiOnly, useEmojiMap, withEmoji, type EmojiMap } from '../emoji/emoji.tsx'
 import type { Message } from '../model.ts'
 import { useChat, useDisplayName } from '../store.ts'
+import { findMatches } from '../search.ts'
 import { formatTime } from '../summary.ts'
 import { isVisualMedia } from '../media.ts'
 import { AttachmentView, LocationView } from './AttachmentView.tsx'
 
 const URL_PATTERN = /(https?:\/\/[^\s<>]+[^\s<>.,;:!?)\]'"])/g
 
-/** Message text with its links clickable and its emoji drawn with the bundled images. */
-function richText(text: string, emoji: EmojiMap | null): ReactNode[] {
+/** Plain text with the search matches marked and the emoji drawn. */
+function marked(text: string, query: string, emoji: EmojiMap | null, key: string, large: boolean): ReactNode[] {
+  const nodes: ReactNode[] = []
+  let last = 0
+  for (const [start, end] of query ? findMatches(text, query) : []) {
+    nodes.push(...withEmoji(text.slice(last, start), emoji, `${key}-${last}`, large))
+    nodes.push(
+      <mark key={`${key}-m${start}`} className="rounded-sm bg-[#ffd279] text-[#111b21]">
+        {withEmoji(text.slice(start, end), emoji, `${key}-${start}`, large)}
+      </mark>,
+    )
+    last = end
+  }
+  nodes.push(...withEmoji(text.slice(last), emoji, `${key}-${last}`, large))
+  return nodes
+}
+
+/** Message text with its links clickable, the search matches marked and the emoji drawn. */
+function richText(text: string, emoji: EmojiMap | null, query: string): ReactNode[] {
   const large = isEmojiOnly(text)
   return text.split(URL_PATTERN).flatMap((part, i) =>
     i % 2 === 1 ? (
       <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-link underline">
-        {part}
+        {marked(part, query, null, String(i), false)}
       </a>
     ) : (
-      withEmoji(part, emoji, String(i), large)
+      marked(part, query, emoji, String(i), large)
     ),
   )
 }
@@ -65,9 +83,11 @@ interface Props {
   firstOfRun: boolean
   /** Shown above the text in groups, on the first incoming message of a run. */
   authorColor?: string
+  /** Search query whose matches are marked in the text. */
+  query?: string
 }
 
-export function MessageBubble({ message, outgoing, firstOfRun, authorColor }: Props) {
+export function MessageBubble({ message, outgoing, firstOfRun, authorColor, query = '' }: Props) {
   const time = formatTime(message.at)
   const emoji = useEmojiMap()
   const display = useDisplayName()
@@ -100,7 +120,7 @@ export function MessageBubble({ message, outgoing, firstOfRun, authorColor }: Pr
         {firstOfRun && !sticker && <Tail outgoing={outgoing} />}
         {authorColor && firstOfRun && (
           <p className="mb-0.5 truncate px-0.5 text-[12.8px] font-medium" style={{ color: authorColor }}>
-            {withEmoji(display(message.author), emoji, "a")}
+            {withEmoji(display(message.author), emoji, 'a')}
           </p>
         )}
         {attachment && <AttachmentView message={message} />}
@@ -118,7 +138,7 @@ export function MessageBubble({ message, outgoing, firstOfRun, authorColor }: Pr
           </p>
         ) : message.text ? (
           <p className="px-0.5 break-words whitespace-pre-wrap">
-            {richText(message.text, emoji)}
+            {richText(message.text, emoji, query)}
             {/* Room for the time, which sits in the bottom corner. */}
             <span className={`inline-block ${message.edited ? 'w-24' : 'w-12'}`} />
           </p>
