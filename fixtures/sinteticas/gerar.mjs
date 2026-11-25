@@ -125,6 +125,33 @@ exportFolder(
   ['IMG-20240314-WA0004.jpg'],
 )
 
+// WhatsApp Web, Brazilian Portuguese browser, group chat: month first and AM/PM whatever the
+// language, no direction marks, no media files, and the person who exported appears as "Você".
+// Next to chat.txt it writes a chat.md that the import does not read.
+exportFolder(
+  'web-ptbr-grupo',
+  'Corrida de domingo',
+  'chat.txt',
+  [
+    'As mensagens e as ligações são protegidas com a criptografia de ponta a ponta e ficam somente entre você e os participantes desta conversa. Nem mesmo o WhatsApp pode ler, ouvir ou compartilhar esse conteúdo.',
+    '[11/2/23, 6:00:00 PM] Bia criou o grupo',
+    '[11/2/23, 6:00:05 PM] Bia adicionou Você',
+    '[11/2/23, 6:01:10 PM] Bia: Domingo às 7h no trapiche',
+    '[11/2/23, 6:01:30 PM] Bia: <Mensagem de album>',
+    '[11/2/23, 6:01:31 PM] Bia: <imagem ocultada> percurso',
+    '[11/2/23, 6:01:31 PM] Bia: <imagem ocultada>',
+    '[11/2/23, 6:02:00 PM] Caio Mendes: <figurinha omitida>',
+    '[11/2/23, 6:03:00 PM] Você: <mensagem de voz omitida>',
+    '[11/2/23, 6:04:00 PM] Bia: <documento omitido> Percurso.pdf',
+    '[11/19/23, 7:05:00 AM] Caio Mendes: <vídeo omitido>',
+    '[11/19/23, 7:06:00 AM] Bia: <Mensagem de message_history_notice>',
+    '[11/19/23, 7:07:00 AM] Você: Bora!',
+    'Levo água',
+  ],
+  [],
+)
+writeFileSync(join(root, 'web-ptbr-grupo', 'Corrida de domingo', 'chat.md'), '# Exportação de conversas do WhatsApp: Corrida de domingo\n')
+
 // iOS, Spanish, individual chat with a two-digit year and the 24-hour clock.
 exportFolder(
   'ios-es-individual',

@@ -7,11 +7,11 @@ Cada termo tem o nome canônico em inglês, usado no código, e o termo usado na
 ## Entrada
 
 **Source Export** (Exportação do WhatsApp):
-O arquivo que o WhatsApp gera em "Exportar conversa": um `.txt` com as mensagens, sozinho ou num `.zip` junto com os arquivos dos anexos. É a única entrada do ExportaZap, e o ExportaZap nunca a altera.
+O arquivo que o WhatsApp gera em "Exportar conversa", no celular ou no WhatsApp Web: um `.txt` com as mensagens, sozinho ou num `.zip`, junto com os arquivos dos anexos quando a exportação inclui mídia (a do WhatsApp Web nunca inclui). É a única entrada do ExportaZap, e o ExportaZap nunca a altera.
 _Avoid_: "exportação" sem qualificação (confunde com Output), backup, histórico
 
 **Export Format** (Formato da exportação):
-O jeito como as linhas do `.txt` estão escritas. Depende da plataforma de origem (Android ou iOS) e do idioma e da região do aparelho, que mudam a ordem da data, o relógio de 12 ou 24 horas, a presença de segundos e os textos fixos como "arquivo anexado".
+O jeito como as linhas do `.txt` estão escritas. Depende da plataforma de origem (Android, iOS ou WhatsApp Web) e do idioma e da região do aparelho, que mudam a ordem da data, o relógio de 12 ou 24 horas, a presença de segundos e os textos fixos como "arquivo anexado".
 _Avoid_: versão, layout
 
 **Fingerprint** (Hash da exportação):

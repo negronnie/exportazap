@@ -83,6 +83,10 @@ describe('guessSelf', () => {
     expect(guessSelf('WhatsApp Chat - Corrida de domingo', ['Bia', 'Caio Mendes', 'Lucas'])).toBeNull()
     expect(guessSelf('WhatsApp Chat - Zé', ['Ana', 'Bia'])).toBeNull()
   })
+
+  it('takes "Você" from WhatsApp Web exports, groups included', () => {
+    expect(guessSelf('Corrida de domingo', ['Bia', 'Caio Mendes', 'Você'])).toBe('Você')
+  })
 })
 
 describe('importExport', () => {
@@ -92,6 +96,7 @@ describe('importExport', () => {
     ['android-ptbr-sem-midia', 'Lucas', 2],
     ['android-en-individual', 'Lucas', 1],
     ['ios-es-individual', 'Lucas', 1],
+    ['web-ptbr-grupo', 'Você', 6],
   ])('%s: guesses %s and counts %i missing attachments', async (caseName, self, missing) => {
     const { name, folder } = syntheticExport(caseName)
     const zip = await zippedExport(folder, name)

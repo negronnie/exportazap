@@ -37,8 +37,8 @@ const INVISIBLE = /[‎‏‪-‮⁦-⁩]/g
 
 const DATE = String.raw`(\d{1,4})[./-](\d{1,2})[./-](\d{1,4})`
 const TIME = String.raw`(\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?(?:[\s  ]?([AaPp])\.?\s?[Mm]\.?)?`
-const HEADERS: Record<Platform, RegExp> = {
-  // [15/10/2023, 14:22:33] Ana: …
+const HEADERS: Record<'ios' | 'android', RegExp> = {
+  // [15/10/2023, 14:22:33] Ana: … (WhatsApp Web uses it too, as [10/15/23, 2:22:33 PM])
   ios: new RegExp(String.raw`^‎?\[${DATE},?\s${TIME}\]\s`),
   // 15/10/2023 14:22 - Ana: …
   android: new RegExp(String.raw`^‎?${DATE},?\s${TIME}\s[-–]\s`),
@@ -173,6 +173,8 @@ const withoutIosPrefix = (fileName: string) => fileName.replace(/^\d{8}-/, '')
 
 interface Interpreted {
   notice?: boolean
+  /** Not an entry of its own: WhatsApp Web opens an album with a line before its photos. */
+  skip?: boolean
   text: string
   attachment?: Attachment
   location?: Message['location']
@@ -282,6 +284,13 @@ function interpret(rawBody: string, platform: Platform, votes: LanguageVotes): I
   // iOS writes system notices as messages from the chat itself, starting with a direction mark.
   if (platform === 'ios' && special && !result.edited) return { notice: true, text: clean }
 
+  // WhatsApp Web names message types it cannot export: `<Mensagem de album>`. The album photos
+  // follow as messages of their own; any other type is kept, as written, as a notice.
+  const webType = clean.match(/^<Mensagem de ([\w-]+)>$/)
+  if (platform === 'web' && webType) {
+    return webType[1] === 'album' ? { skip: true, text: '' } : { notice: true, text: clean.slice(1, -1) }
+  }
+
   return { ...result, text: clean }
 }
 
@@ -309,20 +318,23 @@ function splitAuthor(rest: string, platform: Platform): { author: string; body: 
   return { author, body }
 }
 
-function detectPlatform(lines: string[]): Platform {
+function detectPlatform(text: string, lines: string[]): Platform {
   let ios = 0
   let android = 0
   for (const line of lines) {
     if (HEADERS.ios.test(line)) ios++
     else if (HEADERS.android.test(line)) android++
   }
-  return ios > android ? 'ios' : 'android'
+  if (android >= ios) return 'android'
+  // Same line layout as iOS, but WhatsApp Web never writes direction marks (iOS always does, at
+  // least in the encryption notice).
+  return text.includes(LRM) ? 'ios' : 'web'
 }
 
 export function parseExport(text: string, options: ParseOptions = {}): ParsedExport {
   const lines = text.replace(/^﻿/, '').split(/\r\n|\r|\n/)
-  const platform = detectPlatform(lines)
-  const re = HEADERS[platform]
+  const platform = detectPlatform(text, lines)
+  const re = HEADERS[platform === 'android' ? 'android' : 'ios']
 
   const headers = lines.map((line) => readHeader(line, re))
   const found = headers.filter((h): h is Header => h !== null)
@@ -373,6 +385,7 @@ export function parseExport(text: string, options: ParseOptions = {}): ParsedExp
       continue
     }
     const interpreted = interpret(split.body, platform, votes)
+    if (interpreted.skip) continue
     if (interpreted.notice) {
       for (const [words, language] of NOTICE_WORDS) if (words.test(interpreted.text.toLowerCase())) votes.add(language)
       entries.push({ kind: 'notice', index, at, text: interpreted.text })

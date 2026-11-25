@@ -146,6 +146,40 @@ describe('parseExport: other languages', () => {
   })
 })
 
+describe('parseExport: WhatsApp Web', () => {
+  const parsed = parseCase('web-ptbr-grupo', 'chat.txt')
+  const all = messages(parsed.entries)
+
+  it('tells the web export from iOS and reads the month first', () => {
+    expect(parsed.format).toEqual({ platform: 'web', language: 'pt', dateOrder: 'mdy', hour12: true, seconds: true })
+    expect(parsed.participants).toEqual(['Bia', 'Caio Mendes', 'Você'])
+  })
+
+  it('reads the notices, including the opening line without a timestamp', () => {
+    expect(notices(parsed.entries).map((notice) => notice.text)).toEqual([
+      expect.stringMatching(/^As mensagens e as ligações/),
+      'Bia criou o grupo',
+      'Bia adicionou Você',
+      'Mensagem de message_history_notice',
+    ])
+  })
+
+  it('skips the album line and reads the omitted media with their captions', () => {
+    expect(all.map((message) => message.attachment ?? message.text)).toEqual([
+      'Domingo às 7h no trapiche',
+      { kind: 'image', fileName: null },
+      { kind: 'image', fileName: null },
+      { kind: 'sticker', fileName: null },
+      { kind: 'voice', fileName: null },
+      { kind: 'document', fileName: null, displayName: 'Percurso.pdf' },
+      { kind: 'video', fileName: null },
+      'Bora!\nLevo água',
+    ])
+    expect(all[1].text).toBe('percurso')
+    expect(all[6].at).toBe('2023-11-19T07:05:00')
+  })
+})
+
 describe('parseExport: date order', () => {
   it('flags an export where no part passes 12 and time runs forward either way', () => {
     const parsed = parseExport('01/02/2024 10:00 - Ana: oi\n01/02/2024 10:01 - Bia: oi\n')

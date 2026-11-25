@@ -10,6 +10,8 @@ const NAME_PATTERNS = [
   /^Conversa do WhatsApp - (.+)$/i,
 ]
 
+const SELF_NAMES = ['você', 'you', 'tú']
+
 /** The chat partner named by the export file, or null when the name does not follow a known pattern. */
 export function partnerFromName(exportName: string): string | null {
   // Browsers add ` (1)` to repeated downloads.
@@ -22,10 +24,13 @@ export function partnerFromName(exportName: string): string | null {
 }
 
 /**
- * Guesses which participant made the export. Only individual chats get a guess: in a group the file
- * is named after the group. The person importing always confirms it.
+ * Guesses which participant made the export. Phone exports of groups get no guess, since the file is
+ * named after the group. The person importing always confirms it.
  */
 export function guessSelf(exportName: string, participants: string[]): string | null {
+  // WhatsApp Web writes the messages of whoever exported as from "Você" (or "You").
+  const named = participants.find((participant) => SELF_NAMES.includes(participant.toLocaleLowerCase()))
+  if (named) return named
   if (participants.length !== 2) return null
   const partner = partnerFromName(exportName) ?? exportName.replace(/\s\(\d+\)$/, '').trim()
   const normalized = partner.toLocaleLowerCase()

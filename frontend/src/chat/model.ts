@@ -3,7 +3,8 @@
 /** Wall-clock time as written in the export, `YYYY-MM-DDTHH:mm:ss`. Exports carry no time zone. */
 export type LocalDateTime = string
 
-export type Platform = 'android' | 'ios'
+/** Where the export was made: the phone apps, or WhatsApp Web (no media, own markers). */
+export type Platform = 'android' | 'ios' | 'web'
 
 export type Language = 'pt' | 'en' | 'es'
 
