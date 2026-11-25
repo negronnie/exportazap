@@ -25,8 +25,9 @@ export function useEmojiMap(): EmojiMap | null {
   return map
 }
 
-export const emojiSrc = (map: EmojiMap, emoji: string): string | null =>
-  map[emoji] ? `/emoji/${map[emoji]}.png` : null
+/** Where the images are: the site root in the app, a folder next to the page in the HTML package. */
+export const emojiSrc = (map: EmojiMap, emoji: string, base = '/emoji/'): string | null =>
+  map[emoji] ? `${base}${map[emoji]}.png` : null
 
 /** True for text made only of one to three emoji, which WhatsApp shows larger. */
 export function isEmojiOnly(text: string): boolean {
@@ -36,12 +37,12 @@ export function isEmojiOnly(text: string): boolean {
 }
 
 /** Splits text into plain parts and emoji images; the alt text keeps copy and paste working. */
-export function withEmoji(text: string, map: EmojiMap | null, keyPrefix: string, large = false): ReactNode[] {
+export function withEmoji(text: string, map: EmojiMap | null, keyPrefix: string, large = false, base?: string): ReactNode[] {
   if (!map) return [text]
   const nodes: ReactNode[] = []
   let last = 0
   for (const match of text.matchAll(EMOJI)) {
-    const src = emojiSrc(map, match[0])
+    const src = emojiSrc(map, match[0], base)
     if (!src) continue
     if (match.index > last) nodes.push(text.slice(last, match.index))
     nodes.push(
@@ -57,4 +58,9 @@ export function withEmoji(text: string, map: EmojiMap | null, keyPrefix: string,
   }
   if (last < text.length) nodes.push(text.slice(last))
   return nodes
+}
+
+/** Every emoji in the text that has an image, once each. */
+export function emojiIn(text: string, map: EmojiMap): string[] {
+  return [...new Set(text.match(EMOJI) ?? [])].filter((emoji) => map[emoji])
 }
