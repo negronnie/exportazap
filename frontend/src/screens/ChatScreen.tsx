@@ -1,4 +1,4 @@
-import { ArrowLeft, CalendarDays, EyeOff, Moon, Scissors, Search, Sun } from 'lucide-react'
+import { ArrowLeft, CalendarDays, Download, EyeOff, Moon, Scissors, Search, Sun } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso'
 import { participantColor } from '../chat/colors.ts'
@@ -16,6 +16,8 @@ import { MessageBubble } from '../chat/view/MessageBubble.tsx'
 import { RangeBar } from '../chat/view/RangeBar.tsx'
 import { RedactionBar } from '../chat/view/RedactionBar.tsx'
 import { SearchBar } from '../chat/view/SearchBar.tsx'
+import { ExportDialog } from '../export/ExportDialog.tsx'
+import { useExport } from '../export/useExport.ts'
 import { useTheme } from '../theme.ts'
 
 function DateChip({ day }: { day: LocalDateTime }) {
@@ -49,6 +51,8 @@ export function ChatScreen() {
   const [pickingDate, setPickingDate] = useState(false)
   const [rangeOpen, setRangeOpen] = useState(false)
   const [redactionOpen, setRedactionOpen] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
+  const exporter = useExport()
   // The flash fades two seconds after each jump: the jump whose flash is over is remembered here.
   const [faded, setFaded] = useState(0)
   const list = useRef<VirtuosoHandle>(null)
@@ -167,6 +171,14 @@ export function ChatScreen() {
           >
             <EyeOff size={20} />
           </button>
+          <button
+            type="button"
+            onClick={() => setExportOpen(true)}
+            className="flex items-center gap-1.5 rounded-full bg-accent px-3 py-1.5 text-sm font-medium text-on-accent hover:bg-accent-strong"
+          >
+            <Download size={16} />
+            <span className="hidden sm:inline">Exportar</span>
+          </button>
           <button type="button" onClick={() => setSearching(true)} aria-label="Buscar na conversa" className="rounded-full p-2 text-muted hover:bg-chip">
             <Search size={20} />
           </button>
@@ -205,6 +217,21 @@ export function ChatScreen() {
       </div>
       {infoOpen && <InfoPanel onClose={() => setInfoOpen(false)} />}
       <Lightbox />
+      {exportOpen && (
+        <ExportDialog
+          available={exporter.available}
+          onExport={(choice) => {
+            setExportOpen(false)
+            void exporter.run(choice)
+          }}
+          onClose={() => setExportOpen(false)}
+        />
+      )}
+      {exporter.status && (
+        <div role="status" className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-full bg-panel px-4 py-2 text-sm shadow-xl">
+          {exporter.status}
+        </div>
+      )}
     </main>
   )
 }

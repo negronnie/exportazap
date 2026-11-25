@@ -13,6 +13,7 @@
     "prebuild": "node scripts/emoji.mjs"
   },
   "dependencies": {
+    "@react-pdf/renderer": "4.9.0",
     "@tailwindcss/vite": "^4.3.5",
     "@zip.js/zip.js": "^2.25.0",
     "hash-wasm": "^4.13.0",
@@ -33,5 +34,21 @@
     "typescript": "~7.0.2",
     "vite": "^8.3.6",
     "vitest": "^5.1.2"
+  },
+  "overrides": {
+    "@react-pdf/fns": "3.1.3",
+    "@react-pdf/font": "4.1.2",
+    "@react-pdf/hyphenate": "0.1.0",
+    "@react-pdf/image": "3.1.2",
+    "@react-pdf/layout": "5.2.0",
+    "@react-pdf/paginate": "1.0.1",
+    "@react-pdf/primitives": "4.4.0",
+    "@react-pdf/reconciler": "2.0.0",
+    "@react-pdf/render": "4.7.0",
+    "@react-pdf/stylesheet": "6.3.2",
+    "@react-pdf/svg": "1.1.1",
+    "@react-pdf/textkit": "7.0.1",
+    "@react-pdf/types": "2.14.0",
+    "pdfkit": "0.20.1"
   }
 }
