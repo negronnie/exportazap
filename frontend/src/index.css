@@ -17,6 +17,8 @@
   --on-accent: #ffffff;
   --danger: #ea0038;
   --notice: #ffffff;
+  --link: #027eb5;
+  --chip: rgb(0 0 0 / 5%);
   color-scheme: light;
 }
 
@@ -36,6 +38,8 @@
     --on-accent: #111b21;
     --danger: #f15c6d;
     --notice: #182229;
+    --link: #53bdeb;
+    --chip: rgb(255 255 255 / 6%);
     color-scheme: dark;
   }
 }
@@ -55,6 +59,8 @@
   --on-accent: #111b21;
   --danger: #f15c6d;
   --notice: #182229;
+  --link: #53bdeb;
+  --chip: rgb(255 255 255 / 6%);
   color-scheme: dark;
 }
 
@@ -73,6 +79,8 @@
   --color-on-accent: var(--on-accent);
   --color-danger: var(--danger);
   --color-notice: var(--notice);
+  --color-link: var(--link);
+  --color-chip: var(--chip);
   --font-sans: 'Segoe UI', 'Helvetica Neue', Helvetica, 'Lucida Grande', Arial, Ubuntu, Cantarell, 'Fira Sans', sans-serif;
 }
 
