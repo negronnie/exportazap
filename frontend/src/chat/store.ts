@@ -21,69 +21,114 @@ interface ChatState {
   error: ImportError | null
   /** The export left day and month undecided, so the summary asks; stays true after the answer. */
   asksDateOrder: boolean
+  /** Names given in ExportaZap to participants (Alias in CONTEXT.md), by original name. */
+  aliases: Record<string, string>
+  /** Pictures picked by hand for participants (the export has none), as object URLs. */
+  avatars: Record<string, string>
+  /** The entry the chat list should scroll to and highlight; the nonce repeats a jump to the same one. */
+  focus: { index: number; nonce: number } | null
   importFiles(files: File[]): Promise<void>
   /** Re-reads the export with the date order the person confirmed. */
   confirmDateOrder(order: DateOrder): void
   setSelf(self: string | null): void
   openChat(): void
   backToSummary(): void
+  /** Empty or blank removes the alias. */
+  setAlias(participant: string, alias: string): void
+  setAvatar(participant: string, picture: Blob | null): void
+  jumpTo(index: number): void
   reset(): Promise<void>
 }
 
-export const useChat = create<ChatState>()((set, get) => ({
-  stage: 'idle',
+const blankChat = {
   imported: null,
   self: null,
   error: null,
   asksDateOrder: false,
+  aliases: {},
+  avatars: {},
+  focus: null,
+}
 
-  async importFiles(files) {
-    const previous = get().imported?.source
-    if (previous) {
-      await releaseMedia(previous)
-      await previous.close()
+export const useChat = create<ChatState>()((set, get) => {
+  async function release() {
+    const { imported, avatars } = get()
+    for (const url of Object.values(avatars)) URL.revokeObjectURL(url)
+    if (imported) {
+      await releaseMedia(imported.source)
+      await imported.source.close()
     }
-    set({ stage: 'reading', imported: null, self: null, error: null })
-    try {
-      const imported = await importExport(files)
-      set({ stage: 'summary', imported, self: imported.self, asksDateOrder: imported.parsed.dateOrderAmbiguous })
-    } catch (error) {
-      set({ stage: 'idle', error: error instanceof SourceError ? error.code : 'unreadable' })
-    }
-  },
+  }
 
-  confirmDateOrder(order) {
-    const imported = get().imported
-    if (!imported) return
-    const parsed = parseExport(imported.source.text, { dateOrder: order })
-    set({
-      imported: {
-        ...imported,
-        parsed,
-        missing: missingAttachments(parsed.entries, imported.source),
-        self: guessSelf(imported.source.name, parsed.participants),
-      },
-    })
-  },
+  return {
+    stage: 'idle',
+    ...blankChat,
 
-  setSelf(self) {
-    set({ self })
-  },
+    async importFiles(files) {
+      await release()
+      set({ stage: 'reading', ...blankChat })
+      try {
+        const imported = await importExport(files)
+        set({ stage: 'summary', imported, self: imported.self, asksDateOrder: imported.parsed.dateOrderAmbiguous })
+      } catch (error) {
+        set({ stage: 'idle', error: error instanceof SourceError ? error.code : 'unreadable' })
+      }
+    },
 
-  backToSummary() {
-    if (get().imported) set({ stage: 'summary' })
-  },
+    confirmDateOrder(order) {
+      const imported = get().imported
+      if (!imported) return
+      const parsed = parseExport(imported.source.text, { dateOrder: order })
+      set({
+        imported: {
+          ...imported,
+          parsed,
+          missing: missingAttachments(parsed.entries, imported.source),
+          self: guessSelf(imported.source.name, parsed.participants),
+        },
+      })
+    },
 
-  openChat() {
-    if (get().imported) set({ stage: 'chat' })
-  },
+    setSelf(self) {
+      set({ self })
+    },
 
-  async reset() {
-    const previous = get().imported?.source
-    if (previous) {
-      await releaseMedia(previous)
-      await previous.close()
-    }
-    set({ stage: 'idle', imported: null, self: null, error: null, asksDateOrder: false })
-  },
-}))
+    backToSummary() {
+      if (get().imported) set({ stage: 'summary' })
+    },
+
+    openChat() {
+      if (get().imported) set({ stage: 'chat' })
+    },
+
+    setAlias(participant, alias) {
+      const aliases = { ...get().aliases }
+      if (alias.trim()) aliases[participant] = alias.trim()
+      else delete aliases[participant]
+      set({ aliases })
+    },
+
+    setAvatar(participant, picture) {
+      const avatars = { ...get().avatars }
+      if (avatars[participant]) URL.revokeObjectURL(avatars[participant])
+      if (picture) avatars[participant] = URL.createObjectURL(picture)
+      else delete avatars[participant]
+      set({ avatars })
+    },
+
+    jumpTo(index) {
+      set({ focus: { index, nonce: (get().focus?.nonce ?? 0) + 1 } })
+    },
+
+    async reset() {
+      await release()
+      set({ stage: 'idle', ...blankChat })
+    },
+  }
+})
+
+/** How a participant is called on screen and in the outputs: the alias, when there is one. */
+export const useDisplayName = () => {
+  const aliases = useChat((state) => state.aliases)
+  return (participant: string) => aliases[participant] ?? participant
+}
