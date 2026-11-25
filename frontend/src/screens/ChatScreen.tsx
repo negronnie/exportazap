@@ -7,6 +7,7 @@ import { buildRows, type Row } from '../chat/rows.ts'
 import { useChat } from '../chat/store.ts'
 import { formatDate, summarize } from '../chat/summary.ts'
 import { MessageBubble } from '../chat/view/MessageBubble.tsx'
+import { useEmojiMap, withEmoji } from '../chat/emoji/emoji.tsx'
 import { useTheme } from '../theme.ts'
 
 function DateChip({ day }: { day: LocalDateTime }) {
@@ -18,10 +19,11 @@ function DateChip({ day }: { day: LocalDateTime }) {
 }
 
 function NoticeRow({ text }: { text: string }) {
+  const emoji = useEmojiMap()
   return (
     <div className="flex justify-center px-6 pt-2">
       <span className="max-w-[85%] rounded-lg bg-notice px-3 py-1.5 text-center text-[12.5px] text-muted shadow-sm md:max-w-[65%]">
-        {text}
+        {withEmoji(text, emoji, "n")}
       </span>
     </div>
   )
@@ -79,7 +81,7 @@ export function ChatScreen() {
         </button>
       </header>
 
-      <div className="min-h-0 flex-1 bg-chat">
+      <div className="bg-wallpaper min-h-0 flex-1">
         <Virtuoso
           data={rows}
           computeItemKey={(_, row) => row.key}

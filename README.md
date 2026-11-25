@@ -57,6 +57,10 @@ As imagens ficam no Docker Hub, para amd64 e arm64, com as tags `latest` e a da 
 docker pull negronnie/exportazap:latest
 ```
 
+## Créditos
+
+Os emoji são do [Noto Emoji](https://github.com/googlefonts/noto-emoji), do Google, sob a licença Apache 2.0. O papel de parede é próprio, gerado por `frontend/scripts/fundo.mjs`.
+
 ## Status
 
 - Fase 0 — definição do produto e estrutura do repositório: concluída.

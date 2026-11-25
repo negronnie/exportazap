@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "predev": "node scripts/emoji.mjs",
+    "prebuild": "node scripts/emoji.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.5",
@@ -26,6 +28,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "emoji-datasource-google": "^16.0.0",
     "oxlint": "^1.90.0",
     "typescript": "~7.0.2",
     "vite": "^8.3.6",
