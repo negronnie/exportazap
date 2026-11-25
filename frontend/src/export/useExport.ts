@@ -10,9 +10,10 @@ import { download, outputName } from './download.ts'
 import type { ExportChoice } from './ExportDialog.tsx'
 import type { OutputFormat } from './formats.ts'
 import type { PdfRequest, PdfResponse } from './pdf/pdf.worker.tsx'
+import { usePrintJob } from './print/printJob.ts'
 import { prepareMedia, type StaticMedia } from './staticMedia.ts'
 
-const AVAILABLE: OutputFormat[] = ['pdf']
+const AVAILABLE: OutputFormat[] = ['pdf', 'print']
 
 async function collectMedia(
   document: ExportDocument,
@@ -61,13 +62,15 @@ export function useExport() {
         theme,
         generatedAt: new Date(),
       })
+      const redactor = makeRedactor(settings)
+      const media = await collectMedia(document, imported.source, redactor.text, (done, total) =>
+        setStatus(`Preparando os anexos: ${done} de ${total}`),
+      )
       if (format === 'pdf') {
-        const redactor = makeRedactor(settings)
-        const media = await collectMedia(document, imported.source, redactor.text, (done, total) =>
-          setStatus(`Preparando os anexos: ${done} de ${total}`),
-        )
         setStatus('Gerando o PDF…')
         download(await renderPdf(document, media), outputName(document.title, document.first, 'pdf'))
+      } else if (format === 'print') {
+        usePrintJob.getState().start({ document, media })
       }
       setStatus(null)
     } catch (error) {

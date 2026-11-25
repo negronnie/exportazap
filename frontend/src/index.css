@@ -100,3 +100,42 @@ body {
   background-image: var(--wallpaper);
   background-size: 340px;
 }
+
+/* The printed PDF (ADR 0002): only the print root goes to paper, with its colors kept. */
+#print-root {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm 8mm 14mm;
+  }
+
+  html,
+  body {
+    background: var(--chat) !important;
+  }
+
+  body > #root {
+    display: none !important;
+  }
+
+  #print-root {
+    display: block;
+  }
+
+  #print-root,
+  #print-root * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Fixed elements repeat on every printed page: the Mark goes at the foot of each one. */
+  .print-footer {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+  }
+}
