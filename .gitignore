@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Builds
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.iml
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Local data
+*.sqlite
+*.sqlite3
+*.db
+data/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
