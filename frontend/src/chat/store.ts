@@ -8,6 +8,7 @@ import { parseExport } from '../import/parseExport.ts'
 import { SourceError, type SourceErrorCode } from '../import/readSource.ts'
 import { releaseMedia } from './media.ts'
 import type { DateOrder } from './model.ts'
+import { fullRange, withEnd, withStart, type Range } from './range.ts'
 
 export type Stage = 'idle' | 'reading' | 'summary' | 'chat'
 
@@ -27,6 +28,10 @@ interface ChatState {
   avatars: Record<string, string>
   /** The entry the chat list should scroll to and highlight; the nonce repeats a jump to the same one. */
   focus: { index: number; nonce: number } | null
+  /** What goes to the outputs; starts as the whole chat. */
+  range: Range
+  /** Shows only the range in the chat list. */
+  onlyRange: boolean
   importFiles(files: File[]): Promise<void>
   /** Re-reads the export with the date order the person confirmed. */
   confirmDateOrder(order: DateOrder): void
@@ -37,6 +42,10 @@ interface ChatState {
   setAlias(participant: string, alias: string): void
   setAvatar(participant: string, picture: Blob | null): void
   jumpTo(index: number): void
+  setRange(range: Range): void
+  startRangeAt(index: number): void
+  endRangeAt(index: number): void
+  setOnlyRange(only: boolean): void
   reset(): Promise<void>
 }
 
@@ -48,6 +57,8 @@ const blankChat = {
   aliases: {},
   avatars: {},
   focus: null,
+  range: { start: 0, end: 0 },
+  onlyRange: false,
 }
 
 export const useChat = create<ChatState>()((set, get) => {
@@ -69,7 +80,13 @@ export const useChat = create<ChatState>()((set, get) => {
       set({ stage: 'reading', ...blankChat })
       try {
         const imported = await importExport(files)
-        set({ stage: 'summary', imported, self: imported.self, asksDateOrder: imported.parsed.dateOrderAmbiguous })
+        set({
+          stage: 'summary',
+          imported,
+          self: imported.self,
+          asksDateOrder: imported.parsed.dateOrderAmbiguous,
+          range: fullRange(imported.parsed.entries),
+        })
       } catch (error) {
         set({ stage: 'idle', error: error instanceof SourceError ? error.code : 'unreadable' })
       }
@@ -86,6 +103,8 @@ export const useChat = create<ChatState>()((set, get) => {
           missing: missingAttachments(parsed.entries, imported.source),
           self: guessSelf(imported.source.name, parsed.participants),
         },
+        // Re-reading the dates may move entries around: the range starts over.
+        range: fullRange(parsed.entries),
       })
     },
 
@@ -114,6 +133,22 @@ export const useChat = create<ChatState>()((set, get) => {
       if (picture) avatars[participant] = URL.createObjectURL(picture)
       else delete avatars[participant]
       set({ avatars })
+    },
+
+    setRange(range) {
+      set({ range })
+    },
+
+    startRangeAt(index) {
+      set({ range: withStart(get().range, index) })
+    },
+
+    endRangeAt(index) {
+      set({ range: withEnd(get().range, index) })
+    },
+
+    setOnlyRange(onlyRange) {
+      set({ onlyRange })
     },
 
     jumpTo(index) {

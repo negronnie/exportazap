@@ -1,10 +1,11 @@
-import { ArrowLeft, CalendarDays, Moon, Search, Sun } from 'lucide-react'
+import { ArrowLeft, CalendarDays, Moon, Scissors, Search, Sun } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso'
 import { participantColor } from '../chat/colors.ts'
 import { useEmojiMap, withEmoji } from '../chat/emoji/emoji.tsx'
 import type { LocalDateTime } from '../chat/model.ts'
-import { buildRows, type Row } from '../chat/rows.ts'
+import { inRange, isFull } from '../chat/range.ts'
+import { buildRows, rowEntry, type Row } from '../chat/rows.ts'
 import { useChat, useDisplayName } from '../chat/store.ts'
 import { formatDate, summarize } from '../chat/summary.ts'
 import { Avatar } from '../chat/view/Avatar.tsx'
@@ -12,6 +13,7 @@ import { DatePicker } from '../chat/view/DatePicker.tsx'
 import { InfoPanel } from '../chat/view/InfoPanel.tsx'
 import { Lightbox } from '../chat/view/Lightbox.tsx'
 import { MessageBubble } from '../chat/view/MessageBubble.tsx'
+import { RangeBar } from '../chat/view/RangeBar.tsx'
 import { SearchBar } from '../chat/view/SearchBar.tsx'
 import { useTheme } from '../theme.ts'
 
@@ -35,27 +37,42 @@ function NoticeRow({ text }: { text: string }) {
 }
 
 export function ChatScreen() {
-  const { imported, self, avatars, focus, backToSummary, jumpTo } = useChat()
+  const { imported, self, avatars, focus, range, onlyRange, backToSummary, jumpTo, startRangeAt, endRangeAt } = useChat()
   const display = useDisplayName()
   const { theme, toggle } = useTheme()
   const [infoOpen, setInfoOpen] = useState(false)
   const [searching, setSearching] = useState(false)
   const [query, setQuery] = useState('')
   const [pickingDate, setPickingDate] = useState(false)
+  const [rangeOpen, setRangeOpen] = useState(false)
   // The flash fades two seconds after each jump: the jump whose flash is over is remembered here.
   const [faded, setFaded] = useState(0)
   const list = useRef<VirtuosoHandle>(null)
-  const rows = useMemo(() => (imported ? buildRows(imported.parsed.entries, self) : []), [imported, self])
+  // The rows change with the range only while the list shows just the range.
+  const shownStart = onlyRange ? range.start : null
+  const shownEnd = onlyRange ? range.end : null
+  const rows = useMemo(() => {
+    if (!imported) return []
+    const { entries } = imported.parsed
+    return buildRows(shownStart === null || shownEnd === null ? entries : entries.slice(shownStart, shownEnd + 1), self)
+  }, [imported, self, shownStart, shownEnd])
 
-  // Jumps from the gallery, the search and the calendar land on the message and flash it.
+  // Jumps from the gallery, the search and the calendar land on the message and flash it. Each jump
+  // scrolls once: rows rebuilt later must not pull the list back to an old jump.
+  const scrolledJump = useRef(0)
+  useEffect(() => {
+    if (!focus || focus.nonce === scrolledJump.current) return
+    const index = rows.findIndex((row) => row.kind !== 'date' && rowEntry(row) === focus.index)
+    if (index === -1) return
+    scrolledJump.current = focus.nonce
+    list.current?.scrollToIndex({ index, align: 'center' })
+  }, [focus, rows])
+
   useEffect(() => {
     if (!focus) return
-    const index = rows.findIndex((row) => row.kind !== 'date' && (row.kind === 'notice' ? row.notice.index : row.message.index) === focus.index)
-    if (index === -1) return
-    list.current?.scrollToIndex({ index, align: 'center' })
     const timer = setTimeout(() => setFaded(focus.nonce), 2000)
     return () => clearTimeout(timer)
-  }, [focus, rows])
+  }, [focus])
 
   if (!imported) return null
 
@@ -65,7 +82,14 @@ export function ChatScreen() {
   const partner = summary.isGroup ? null : (participants.find((participant) => participant !== self) ?? null)
   const title = partner ? display(partner) : summary.title
 
-  const renderRow = (row: Row) => {
+  const fullChat = isFull(range, imported.parsed.entries)
+
+  // Outside a partial range the chat fades, so the range stands out.
+  const renderRow = (row: Row) => (
+    <div className={fullChat || inRange(range, rowEntry(row)) ? '' : 'opacity-40'}>{renderContent(row)}</div>
+  )
+
+  const renderContent = (row: Row) => {
     if (row.kind === 'date') return <DateChip day={row.day} />
     if (row.kind === 'notice') return <NoticeRow text={row.notice.text} />
     const showAuthor = summary.isGroup && !row.outgoing
@@ -77,6 +101,10 @@ export function ChatScreen() {
           firstOfRun={row.firstOfRun}
           authorColor={showAuthor ? participantColor(participants, row.message.author) : undefined}
           query={searching ? query : ''}
+          menu={[
+            { label: 'Começar o recorte aqui', run: () => startRangeAt(row.message.index) },
+            { label: 'Terminar o recorte aqui', run: () => endRangeAt(row.message.index) },
+          ]}
         />
       </div>
     )
@@ -109,6 +137,15 @@ export function ChatScreen() {
               </span>
             </span>
           </button>
+          <button
+            type="button"
+            onClick={() => setRangeOpen((open) => !open)}
+            aria-label="Recorte"
+            aria-pressed={rangeOpen}
+            className={`rounded-full p-2 hover:bg-chip ${fullChat ? 'text-muted' : 'text-accent-strong'}`}
+          >
+            <Scissors size={20} />
+          </button>
           <button type="button" onClick={() => setSearching(true)} aria-label="Buscar na conversa" className="rounded-full p-2 text-muted hover:bg-chip">
             <Search size={20} />
           </button>
@@ -132,6 +169,7 @@ export function ChatScreen() {
           {pickingDate && <DatePicker entries={imported.parsed.entries} onPick={jumpTo} onClose={() => setPickingDate(false)} />}
         </header>
       )}
+      {rangeOpen && <RangeBar onClose={() => setRangeOpen(false)} />}
 
       <div className="bg-wallpaper min-h-0 flex-1">
         <Virtuoso
