@@ -1,0 +1,3 @@
+# Prints em formato de tela e tripa dividida em partes
+
+Os navegadores limitam o tamanho de uma imagem gerada na página: no Safari do iPhone, cerca de 16,7 milhões de pixels (algo como 1080 × 15.500); o WebP aceita no máximo 16.383 px de altura, e o JPEG, 65.535 px. Por isso os prints saem em formato de tela de celular (1080 × 2340), com a barra de topo da conversa em cada um, numerados e entregues num `.zip`. A tripa sai em PNG, com 1080 px de largura, e é dividida automaticamente em partes acima de cerca de 15.000 px de altura, com aviso a quem exporta. Nenhuma mensagem é cortada entre duas imagens.

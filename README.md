@@ -14,6 +14,12 @@ Roda hospedado, para acessar pelo navegador, e também pode ser hospedado localm
 |---|---|
 | `frontend/` | Interface — React 19, TypeScript, Vite 8, Vitest; servida por nginx na imagem Docker |
 | `.github/workflows/` | CI, release com git-cliff e publicação das imagens no Docker Hub |
+| `docs/` | Decisões de arquitetura (ADRs) |
+
+## Documentação
+
+- [CONTEXT.md](./CONTEXT.md) — glossário do domínio
+- [docs/adr](./docs/adr) — decisões de arquitetura
 
 ## Desenvolvimento
 
@@ -41,7 +47,7 @@ docker run --rm -p 8080:80 exportazap  # http://localhost:8080
 
 ## Versões e imagens
 
-As versões seguem o [Conventional Commits](https://www.conventionalcommits.org): o workflow **Gerar Release e Tag** (disparado à mão em Actions) roda o CI, calcula a próxima versão a partir dos commits, atualiza o `CHANGELOG.md`, cria a tag e a release e publica as imagens. A primeira versão é a `v0.1.0`.
+As versões seguem o [Conventional Commits](https://www.conventionalcommits.org): o workflow **Gerar Release e Tag** (disparado à mão em Actions) roda o CI, calcula a próxima versão a partir dos commits, atualiza o `CHANGELOG.md`, cria a tag e a release e publica as imagens. A primeira versão é a `v0.1.0`; as versões ficam em `0.x` enquanto a v1 é construída, e a `1.0.0` sai quando o milestone v1 fechar.
 
 As imagens ficam no Docker Hub, para amd64 e arm64, com as tags `latest` e a da versão:
 
@@ -51,4 +57,8 @@ docker pull negronnie/exportazap:latest
 
 ## Status
 
-- Fase 0 — definição do produto e estrutura do repositório: em andamento.
+- Fase 0 — definição do produto e estrutura do repositório: concluída.
+- v1 — a conversa no navegador, com as três saídas e a versão pública: em andamento ([milestone v1](https://github.com/negronnie/exportazap/milestone/2)).
+- v2 — versão hospedada, com link compartilhável, e o que ficou de fora da v1 ([milestone v2](https://github.com/negronnie/exportazap/milestone/1)).
+
+O roadmap completo está nas issues de épico do repositório.

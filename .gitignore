@@ -29,3 +29,6 @@ data/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Real WhatsApp exports used in tests (never committed)
+fixtures/privadas/
