@@ -14,6 +14,9 @@ const loading = import('./map.json').then((module) => {
   return loaded
 })
 
+/** The emoji table, for code outside React (the screenshots draw emoji too). */
+export const loadEmojiMap = () => loading
+
 export function useEmojiMap(): EmojiMap | null {
   const [map, setMap] = useState(loaded)
   useEffect(() => {

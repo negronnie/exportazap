@@ -3,17 +3,19 @@
 
 import { useState } from 'react'
 import { makeRedactor } from '../chat/redaction.ts'
+import { loadEmojiMap } from '../chat/emoji/emoji.tsx'
 import { useChat } from '../chat/store.ts'
 import type { SourceExport } from '../import/readSource.ts'
 import { buildExport, type ExportDocument } from './document.ts'
-import { download, outputName } from './download.ts'
+import { download, outputName, zipImages } from './download.ts'
 import type { ExportChoice } from './ExportDialog.tsx'
 import type { OutputFormat } from './formats.ts'
 import type { PdfRequest, PdfResponse } from './pdf/pdf.worker.tsx'
 import { usePrintJob } from './print/printJob.ts'
+import { captureShots } from './shots/capture.tsx'
 import { prepareMedia, type StaticMedia } from './staticMedia.ts'
 
-const AVAILABLE: OutputFormat[] = ['pdf', 'print']
+const AVAILABLE: OutputFormat[] = ['pdf', 'print', 'screenshots', 'strip']
 
 async function collectMedia(
   document: ExportDocument,
@@ -71,6 +73,19 @@ export function useExport() {
         download(await renderPdf(document, media), outputName(document.title, document.first, 'pdf'))
       } else if (format === 'print') {
         usePrintJob.getState().start({ document, media })
+      } else if (format === 'screenshots' || format === 'strip') {
+        const images = await captureShots(document, media, await loadEmojiMap(), format === 'screenshots' ? 'screens' : 'strip', (done, total) =>
+          setStatus(`Gerando as imagens: ${done + 1} de ${total}`),
+        )
+        const base = outputName(document.title, document.first, 'png').replace(/.png$/, '')
+        // The screenshots always go in a zip; the strip is one PNG unless it had to be split (ADR 0003).
+        if (format === 'strip' && images.length === 1) download(images[0], `${base}.png`)
+        else download(await zipImages(images, base), `${base}.zip`)
+        if (format === 'strip' && images.length > 1) {
+          setStatus(`A tripa saiu em ${images.length} partes: numa imagem só, ela ficaria grande demais para os navegadores.`)
+          setTimeout(() => setStatus(null), 6000)
+          return
+        }
       }
       setStatus(null)
     } catch (error) {

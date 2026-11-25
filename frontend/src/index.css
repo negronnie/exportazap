@@ -1,8 +1,10 @@
 @import 'tailwindcss';
 
 /* The WhatsApp palette (colors only: names, logos and the wallpaper art stay out, see ADR 0006).
-   The dark theme follows the system until the person picks one; data-theme on <html> wins. */
-:root {
+   The dark theme follows the system until the person picks one; data-theme on <html> wins. The
+   theme-light and theme-dark classes set a theme for a part of the page, as the screenshots need. */
+:root,
+.theme-light {
   --app: #f0f2f5;
   --panel: #ffffff;
   --bar: #f0f2f5;
@@ -46,7 +48,8 @@
   }
 }
 
-:root[data-theme='dark'] {
+:root[data-theme='dark'],
+.theme-dark {
   --app: #0c1317;
   --panel: #111b21;
   --bar: #202c33;

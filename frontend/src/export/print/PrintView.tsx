@@ -3,7 +3,9 @@
 
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { CoverSheet, MarkFooter, StaticChat } from '../static/StaticChat.tsx'
+import { useEmojiMap } from '../../chat/emoji/emoji.tsx'
+import { CoverSheet, MarkFooter } from '../static/StaticChat.tsx'
+import { staticRows } from '../static/staticRows.tsx'
 import { usePrintJob } from './printJob.ts'
 
 function picturesLoaded(root: HTMLElement): Promise<void> {
@@ -15,6 +17,7 @@ function picturesLoaded(root: HTMLElement): Promise<void> {
 
 export function PrintView() {
   const { job, finish } = usePrintJob()
+  const emoji = useEmojiMap()
   const root = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -43,7 +46,7 @@ export function PrintView() {
     <div id="print-root" ref={root} className="text-text">
       <CoverSheet document={job.document} />
       <div className="bg-chat">
-        <StaticChat document={job.document} media={job.media} />
+        <div className="pb-3">{staticRows(job.document, job.media, emoji)}</div>
       </div>
       <div className="print-footer">
         <MarkFooter />
