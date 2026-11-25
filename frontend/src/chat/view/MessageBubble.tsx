@@ -1,8 +1,8 @@
-import { Ban, BarChart3 } from 'lucide-react'
+import { Ban, BarChart3, EyeOff } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { isEmojiOnly, useEmojiMap, withEmoji, type EmojiMap } from '../emoji/emoji.tsx'
 import type { Message } from '../model.ts'
-import { useChat, useDisplayName } from '../store.ts'
+import { useChat, useRedactor } from '../store.ts'
 import { findMatches } from '../search.ts'
 import { formatTime } from '../summary.ts'
 import { isVisualMedia } from '../media.ts'
@@ -43,17 +43,18 @@ function richText(text: string, emoji: EmojiMap | null, query: string): ReactNod
 }
 
 function Poll({ message }: { message: Message }) {
+  const redactor = useRedactor()
   const poll = message.poll!
   return (
     <div className="mb-1 space-y-1">
       <p className="flex items-center gap-1.5 font-medium">
         <BarChart3 size={16} className="text-muted" aria-hidden />
-        {poll.question}
+        {redactor.text(poll.question)}
       </p>
       <ul className="space-y-0.5 text-sm">
         {poll.options.map((option) => (
           <li key={option.text} className="flex justify-between gap-4">
-            <span>{option.text}</span>
+            <span>{redactor.text(option.text)}</span>
             <span className="text-muted">
               {option.votes} {option.votes === 1 ? 'voto' : 'votos'}
             </span>
@@ -88,12 +89,14 @@ interface Props {
   query?: string
   /** Actions in the menu of the bubble. */
   menu?: MenuAction[]
+  /** Left out of the outputs: still readable here, faded and labeled. */
+  hidden?: boolean
 }
 
-export function MessageBubble({ message, outgoing, firstOfRun, authorColor, query = '', menu }: Props) {
+export function MessageBubble({ message, outgoing, firstOfRun, authorColor, query = '', menu, hidden = false }: Props) {
   const time = formatTime(message.at)
   const emoji = useEmojiMap()
-  const display = useDisplayName()
+  const redactor = useRedactor()
   const files = useChat((state) => state.imported?.source.files)
   const attachment = message.attachment
   const present = attachment?.fileName ? files?.has(attachment.fileName) === true : false
@@ -112,7 +115,7 @@ export function MessageBubble({ message, outgoing, firstOfRun, authorColor, quer
   return (
     <div className={`flex px-3 md:px-[6%] ${outgoing ? 'justify-end' : 'justify-start'} ${firstOfRun ? 'pt-2' : 'pt-0.5'}`}>
       <div
-        className={`group relative max-w-[85%] text-[14.2px] leading-[19px] md:max-w-[65%] ${
+        className={`group relative max-w-[85%] text-[14.2px] ${hidden ? 'opacity-50' : ''} leading-[19px] md:max-w-[65%] ${
           sticker
             ? ''
             : `rounded-lg px-1.5 pt-1.5 pb-2 shadow-sm ${outgoing ? 'bg-bubble-out' : 'bg-bubble-in'} ${
@@ -122,9 +125,15 @@ export function MessageBubble({ message, outgoing, firstOfRun, authorColor, quer
       >
         {firstOfRun && !sticker && <Tail outgoing={outgoing} />}
         {menu && <MessageMenu actions={menu} outgoing={outgoing} />}
+        {hidden && (
+          <p className="mb-1 flex items-center gap-1 px-0.5 text-[11px] font-medium text-danger">
+            <EyeOff size={12} aria-hidden />
+            Oculta nas exportações
+          </p>
+        )}
         {authorColor && firstOfRun && (
           <p className="mb-0.5 truncate px-0.5 text-[12.8px] font-medium" style={{ color: authorColor }}>
-            {withEmoji(display(message.author), emoji, 'a')}
+            {withEmoji(redactor.name(message.author), emoji, 'a')}
           </p>
         )}
         {attachment && <AttachmentView message={message} />}
@@ -142,7 +151,7 @@ export function MessageBubble({ message, outgoing, firstOfRun, authorColor, quer
           </p>
         ) : message.text ? (
           <p className="px-0.5 break-words whitespace-pre-wrap">
-            {richText(message.text, emoji, query)}
+            {richText(redactor.text(message.text), emoji, query)}
             {/* Room for the time, which sits in the bottom corner. */}
             <span className={`inline-block ${message.edited ? 'w-24' : 'w-12'}`} />
           </p>

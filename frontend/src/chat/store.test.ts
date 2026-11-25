@@ -54,4 +54,18 @@ describe('chat store', () => {
     useChat.getState().endRangeAt(1)
     expect(useChat.getState().range).toEqual({ start: 1, end: 1 })
   })
+
+  it('hides messages in chat order, masks numbers and starts clean on the next import', async () => {
+    const { folder } = syntheticExport('android-ptbr-sem-midia')
+    await useChat.getState().importFiles(looseFiles(folder))
+    useChat.getState().toggleHidden(3)
+    useChat.getState().toggleHidden(1)
+    expect(useChat.getState().hidden).toEqual([1, 3])
+    useChat.getState().toggleHidden(3)
+    expect(useChat.getState().hidden).toEqual([1])
+    useChat.getState().setMaskNumbers(true)
+    useChat.getState().setAlias('Bruno Lima', 'B.')
+    await useChat.getState().importFiles(looseFiles(folder))
+    expect(useChat.getState()).toMatchObject({ hidden: [], maskNumbers: false, aliases: {} })
+  })
 })

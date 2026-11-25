@@ -1,6 +1,7 @@
 // The one chat loaded in this tab. Nothing is saved: closing or reloading the page loses it
 // (ADR 0001; local persistence is issue #4).
 
+import { useMemo } from 'react'
 import { create } from 'zustand'
 import { guessSelf } from '../import/guessSelf.ts'
 import { importExport, missingAttachments, type ImportedChat } from '../import/importExport.ts'
@@ -9,6 +10,7 @@ import { SourceError, type SourceErrorCode } from '../import/readSource.ts'
 import { releaseMedia } from './media.ts'
 import type { DateOrder } from './model.ts'
 import { fullRange, withEnd, withStart, type Range } from './range.ts'
+import { makeRedactor, type Redactor } from './redaction.ts'
 
 export type Stage = 'idle' | 'reading' | 'summary' | 'chat'
 
@@ -32,6 +34,10 @@ interface ChatState {
   range: Range
   /** Shows only the range in the chat list. */
   onlyRange: boolean
+  /** Masks phone numbers on screen and in the outputs. */
+  maskNumbers: boolean
+  /** Entries left out of the outputs (Hidden Message), in chat order. */
+  hidden: number[]
   importFiles(files: File[]): Promise<void>
   /** Re-reads the export with the date order the person confirmed. */
   confirmDateOrder(order: DateOrder): void
@@ -46,6 +52,9 @@ interface ChatState {
   startRangeAt(index: number): void
   endRangeAt(index: number): void
   setOnlyRange(only: boolean): void
+  setMaskNumbers(mask: boolean): void
+  toggleHidden(index: number): void
+  showAllHidden(): void
   reset(): Promise<void>
 }
 
@@ -59,6 +68,8 @@ const blankChat = {
   focus: null,
   range: { start: 0, end: 0 },
   onlyRange: false,
+  maskNumbers: false,
+  hidden: [],
 }
 
 export const useChat = create<ChatState>()((set, get) => {
@@ -147,6 +158,21 @@ export const useChat = create<ChatState>()((set, get) => {
       set({ range: withEnd(get().range, index) })
     },
 
+    setMaskNumbers(maskNumbers) {
+      set({ maskNumbers })
+    },
+
+    toggleHidden(index) {
+      const hidden = get().hidden
+      set({
+        hidden: hidden.includes(index) ? hidden.filter((value) => value !== index) : [...hidden, index].sort((a, b) => a - b),
+      })
+    },
+
+    showAllHidden() {
+      set({ hidden: [] })
+    },
+
     setOnlyRange(onlyRange) {
       set({ onlyRange })
     },
@@ -163,7 +189,12 @@ export const useChat = create<ChatState>()((set, get) => {
 })
 
 /** How a participant is called on screen and in the outputs: the alias, when there is one. */
-export const useDisplayName = () => {
+/** The redaction in force, applied the same way on screen and in the outputs. */
+export function useRedactor(): Redactor {
   const aliases = useChat((state) => state.aliases)
-  return (participant: string) => aliases[participant] ?? participant
+  const maskNumbers = useChat((state) => state.maskNumbers)
+  return useMemo(() => makeRedactor({ aliases, maskNumbers }), [aliases, maskNumbers])
 }
+
+/** How a participant is called on screen and in the outputs. */
+export const useDisplayName = () => useRedactor().name

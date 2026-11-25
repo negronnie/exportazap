@@ -1,4 +1,4 @@
-import { ArrowLeft, CalendarDays, Moon, Scissors, Search, Sun } from 'lucide-react'
+import { ArrowLeft, CalendarDays, EyeOff, Moon, Scissors, Search, Sun } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso'
 import { participantColor } from '../chat/colors.ts'
@@ -6,7 +6,7 @@ import { useEmojiMap, withEmoji } from '../chat/emoji/emoji.tsx'
 import type { LocalDateTime } from '../chat/model.ts'
 import { inRange, isFull } from '../chat/range.ts'
 import { buildRows, rowEntry, type Row } from '../chat/rows.ts'
-import { useChat, useDisplayName } from '../chat/store.ts'
+import { useChat, useDisplayName, useRedactor } from '../chat/store.ts'
 import { formatDate, summarize } from '../chat/summary.ts'
 import { Avatar } from '../chat/view/Avatar.tsx'
 import { DatePicker } from '../chat/view/DatePicker.tsx'
@@ -14,6 +14,7 @@ import { InfoPanel } from '../chat/view/InfoPanel.tsx'
 import { Lightbox } from '../chat/view/Lightbox.tsx'
 import { MessageBubble } from '../chat/view/MessageBubble.tsx'
 import { RangeBar } from '../chat/view/RangeBar.tsx'
+import { RedactionBar } from '../chat/view/RedactionBar.tsx'
 import { SearchBar } from '../chat/view/SearchBar.tsx'
 import { useTheme } from '../theme.ts'
 
@@ -27,17 +28,19 @@ function DateChip({ day }: { day: LocalDateTime }) {
 
 function NoticeRow({ text }: { text: string }) {
   const emoji = useEmojiMap()
+  const redactor = useRedactor()
   return (
     <div className="flex justify-center px-6 pt-2">
       <span className="max-w-[85%] rounded-lg bg-notice px-3 py-1.5 text-center text-[12.5px] text-muted shadow-sm md:max-w-[65%]">
-        {withEmoji(text, emoji, 'n')}
+        {withEmoji(redactor.text(text), emoji, 'n')}
       </span>
     </div>
   )
 }
 
 export function ChatScreen() {
-  const { imported, self, avatars, focus, range, onlyRange, backToSummary, jumpTo, startRangeAt, endRangeAt } = useChat()
+  const { imported, self, avatars, focus, range, onlyRange, hidden, maskNumbers, aliases, backToSummary, jumpTo, startRangeAt, endRangeAt, toggleHidden } =
+    useChat()
   const display = useDisplayName()
   const { theme, toggle } = useTheme()
   const [infoOpen, setInfoOpen] = useState(false)
@@ -45,6 +48,7 @@ export function ChatScreen() {
   const [query, setQuery] = useState('')
   const [pickingDate, setPickingDate] = useState(false)
   const [rangeOpen, setRangeOpen] = useState(false)
+  const [redactionOpen, setRedactionOpen] = useState(false)
   // The flash fades two seconds after each jump: the jump whose flash is over is remembered here.
   const [faded, setFaded] = useState(0)
   const list = useRef<VirtuosoHandle>(null)
@@ -83,6 +87,7 @@ export function ChatScreen() {
   const title = partner ? display(partner) : summary.title
 
   const fullChat = isFull(range, imported.parsed.entries)
+  const redacting = hidden.length > 0 || maskNumbers || Object.keys(aliases).length > 0
 
   // Outside a partial range the chat fades, so the range stands out.
   const renderRow = (row: Row) => (
@@ -101,9 +106,14 @@ export function ChatScreen() {
           firstOfRun={row.firstOfRun}
           authorColor={showAuthor ? participantColor(participants, row.message.author) : undefined}
           query={searching ? query : ''}
+          hidden={hidden.includes(row.message.index)}
           menu={[
             { label: 'Começar o recorte aqui', run: () => startRangeAt(row.message.index) },
             { label: 'Terminar o recorte aqui', run: () => endRangeAt(row.message.index) },
+            {
+              label: hidden.includes(row.message.index) ? 'Voltar a mostrar nas exportações' : 'Ocultar nas exportações',
+              run: () => toggleHidden(row.message.index),
+            },
           ]}
         />
       </div>
@@ -141,10 +151,21 @@ export function ChatScreen() {
             type="button"
             onClick={() => setRangeOpen((open) => !open)}
             aria-label="Recorte"
+            title="Recorte"
             aria-pressed={rangeOpen}
             className={`rounded-full p-2 hover:bg-chip ${fullChat ? 'text-muted' : 'text-accent-strong'}`}
           >
             <Scissors size={20} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setRedactionOpen((open) => !open)}
+            aria-label="Ocultação"
+            title="Ocultação"
+            aria-pressed={redactionOpen}
+            className={`rounded-full p-2 hover:bg-chip ${redacting ? 'text-accent-strong' : 'text-muted'}`}
+          >
+            <EyeOff size={20} />
           </button>
           <button type="button" onClick={() => setSearching(true)} aria-label="Buscar na conversa" className="rounded-full p-2 text-muted hover:bg-chip">
             <Search size={20} />
@@ -170,6 +191,7 @@ export function ChatScreen() {
         </header>
       )}
       {rangeOpen && <RangeBar onClose={() => setRangeOpen(false)} />}
+      {redactionOpen && <RedactionBar onClose={() => setRedactionOpen(false)} />}
 
       <div className="bg-wallpaper min-h-0 flex-1">
         <Virtuoso
