@@ -1,3 +1,4 @@
+import { ShieldCheck, WifiOff } from 'lucide-react'
 import { useState, type DragEvent } from 'react'
 import { useChat, type ImportError } from '../chat/store.ts'
 
@@ -86,9 +87,17 @@ export function ImportScreen() {
         )}
       </section>
 
-      <p className="text-center text-sm text-muted">
-        Tudo acontece no seu aparelho: a conversa não é enviada para nenhum servidor e some quando você fecha a página.
-      </p>
+      <div className="space-y-3 text-center text-sm text-muted">
+        <p>Tudo acontece no seu aparelho: a conversa não é enviada para nenhum servidor e some quando você fecha a página.</p>
+        <p className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-panel px-3 py-1">
+            <WifiOff size={14} aria-hidden /> Funciona offline
+          </span>
+          <a href="#privacidade" className="inline-flex items-center gap-1.5 text-accent-strong">
+            <ShieldCheck size={14} aria-hidden /> Privacidade
+          </a>
+        </p>
+      </div>
     </main>
   )
 }
