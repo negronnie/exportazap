@@ -12,10 +12,11 @@ import type { ExportChoice } from './ExportDialog.tsx'
 import type { OutputFormat } from './formats.ts'
 import type { PdfRequest, PdfResponse } from './pdf/pdf.worker.tsx'
 import { usePrintJob } from './print/printJob.ts'
+import { buildPackage } from './html/buildPackage.ts'
 import { captureShots } from './shots/capture.tsx'
 import { prepareMedia, type StaticMedia } from './staticMedia.ts'
 
-const AVAILABLE: OutputFormat[] = ['pdf', 'print', 'screenshots', 'strip']
+const AVAILABLE: OutputFormat[] = ['pdf', 'print', 'screenshots', 'strip', 'html']
 
 async function collectMedia(
   document: ExportDocument,
@@ -64,6 +65,25 @@ export function useExport() {
         theme,
         generatedAt: new Date(),
       })
+      if (format === 'html') {
+        // The package carries the attachments themselves, so no stills are needed.
+        const viewer = await fetch('/viewer/viewer.html')
+        if (!viewer.ok) throw new Error('ExportaZap: viewer page missing')
+        const base = outputName(document.title, document.first, 'zip').replace(/.zip$/, '')
+        const zip = await buildPackage({
+          document,
+          source: imported.source,
+          settings,
+          template: await viewer.text(),
+          emojiMap: await loadEmojiMap(),
+          emojiImage: (image) => fetch(`/emoji/${image}.png`).then((response) => response.blob()),
+          folder: base,
+          progress: (done, total) => setStatus(`Montando o pacote: ${done + 1} de ${total} arquivos`),
+        })
+        download(zip, `${base}.zip`)
+        setStatus(null)
+        return
+      }
       const redactor = makeRedactor(settings)
       const media = await collectMedia(document, imported.source, redactor.text, (done, total) =>
         setStatus(`Preparando os anexos: ${done} de ${total}`),

@@ -35,3 +35,6 @@ fixtures/privadas/
 
 # Noto Emoji images, copied from emoji-datasource-google at build time
 frontend/public/emoji/
+
+# The viewer of the HTML package, built by `npm run build:viewer`
+frontend/public/viewer/

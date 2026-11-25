@@ -9,8 +9,9 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
-    "predev": "node scripts/emoji.mjs",
-    "prebuild": "node scripts/emoji.mjs"
+    "predev": "node scripts/emoji.mjs && npm run build:viewer",
+    "prebuild": "node scripts/emoji.mjs && npm run build:viewer",
+    "build:viewer": "vite build --config vite.viewer.config.ts"
   },
   "dependencies": {
     "@react-pdf/renderer": "4.9.0",
@@ -34,6 +35,7 @@
     "oxlint": "^1.90.0",
     "typescript": "~7.0.2",
     "vite": "^8.3.6",
+    "vite-plugin-singlefile": "^2.3.4",
     "vitest": "^5.1.2"
   },
   "overrides": {
