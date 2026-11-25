@@ -3,7 +3,7 @@
 
 import { FileText, ImageOff, MapPin, Play, UserRound } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { useEmojiMap, withEmoji, type EmojiMap } from '../../chat/emoji/emoji.tsx'
+import { withEmoji, type EmojiMap } from '../../chat/emoji/emoji.tsx'
 import type { AttachmentKind } from '../../chat/model.ts'
 import { formatDate, formatTime } from '../../chat/summary.ts'
 import type { ExportDocument, ExportEntry } from '../document.ts'
@@ -91,7 +91,7 @@ function Attachment({ entry, media }: { entry: Extract<ExportEntry, { kind: 'mes
   )
 }
 
-function Bubble({ entry, media, isGroup, emoji }: { entry: ExportEntry; media?: StaticMedia; isGroup: boolean; emoji: EmojiMap | null }) {
+export function StaticBubble({ entry, media, isGroup, emoji }: { entry: ExportEntry; media?: StaticMedia; isGroup: boolean; emoji: EmojiMap | null }) {
   if (entry.kind === 'notice') {
     return (
       <div className="flex justify-center px-6 pt-2">
@@ -155,23 +155,12 @@ function Bubble({ entry, media, isGroup, emoji }: { entry: ExportEntry; media?: 
   )
 }
 
-/** The bubbles of the range, with a date chip whenever the day changes. */
-export function StaticChat({ document: doc, media }: { document: ExportDocument; media: Map<number, StaticMedia> }) {
-  const emoji = useEmojiMap()
-  const rows: ReactNode[] = []
-  let day = ''
-  for (const entry of doc.entries) {
-    if (entry.at.slice(0, 10) !== day) {
-      day = entry.at.slice(0, 10)
-      rows.push(
-        <div key={`d${day}`} className="flex justify-center px-3 pt-3 pb-1 break-after-avoid">
-          <span className="rounded-lg bg-notice px-3 py-1 text-[12.5px] text-muted shadow-sm">{formatDate(entry.at)}</span>
-        </div>,
-      )
-    }
-    rows.push(<Bubble key={entry.index} entry={entry} media={media.get(entry.index)} isGroup={doc.isGroup} emoji={emoji} />)
-  }
-  return <div className="pb-3">{rows}</div>
+export function StaticDateChip({ at }: { at: string }) {
+  return (
+    <div className="flex justify-center px-3 pt-3 pb-1 break-after-avoid">
+      <span className="rounded-lg bg-notice px-3 py-1 text-[12.5px] text-muted shadow-sm">{formatDate(at)}</span>
+    </div>
+  )
 }
 
 /** The cover of the printed PDF, with what identifies the export (ADR 0005). */
