@@ -51,12 +51,13 @@ export function makeRedactor({ aliases, maskNumbers }: RedactionSettings): Redac
 }
 
 export interface RedactionSummary {
-  aliases: [original: string, alias: string][]
+  /** How many participants were renamed; never which names, or the cover page would leak them. */
+  aliases: number
   maskNumbers: boolean
   hidden: number
 }
 
 /** What was redacted, for the cover page of the PDF (ADR 0005). */
 export function summarizeRedaction(settings: RedactionSettings, hidden: number[]): RedactionSummary {
-  return { aliases: Object.entries(settings.aliases), maskNumbers: settings.maskNumbers, hidden: hidden.length }
+  return { aliases: Object.keys(settings.aliases).length, maskNumbers: settings.maskNumbers, hidden: hidden.length }
 }
