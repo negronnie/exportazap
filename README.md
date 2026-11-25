@@ -38,6 +38,8 @@ npm run dev
 cd frontend && npm run lint && npm test && npm run build
 ```
 
+Os testes da importação usam as exportações sintéticas de `fixtures/sinteticas/`, geradas por `node fixtures/sinteticas/gerar.mjs`. Exportações reais, anonimizadas, ficam em `fixtures/privadas/`, que o git ignora: quando a pasta existe, os testes também conferem essas exportações, olhando só contagens e a ordem das datas, sem mostrar o conteúdo.
+
 ### Imagem Docker
 
 ```bash
