@@ -29,13 +29,16 @@ export function withEnd(range: Range, end: number): Range {
  * before `to`. Null when no entry falls between them.
  */
 export function rangeBetween(entries: Entry[], from: LocalDateTime, to: LocalDateTime): Range | null {
-  const start = entries.findIndex((entry) => entry.at >= from)
-  let end = -1
-  for (let i = entries.length - 1; i >= 0; i--) {
-    if (entries[i].at <= to) {
-      end = i
-      break
-    }
-  }
+  const start = firstAtOrAfter(entries, from)
+  const end = lastAtOrBefore(entries, to)
   return start === -1 || end === -1 || start > end ? null : { start, end }
+}
+
+/** Index of the first entry at or after the moment, or -1. */
+export const firstAtOrAfter = (entries: Entry[], at: LocalDateTime) => entries.findIndex((entry) => entry.at >= at)
+
+/** Index of the last entry at or before the moment, or -1. */
+export function lastAtOrBefore(entries: Entry[], at: LocalDateTime): number {
+  for (let i = entries.length - 1; i >= 0; i--) if (entries[i].at <= at) return i
+  return -1
 }

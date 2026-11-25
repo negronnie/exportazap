@@ -2,7 +2,7 @@
 // the switch that shows only the range.
 
 import { X } from 'lucide-react'
-import { fullRange, isFull, rangeBetween } from '../range.ts'
+import { firstAtOrAfter, fullRange, isFull, lastAtOrBefore, withEnd, withStart } from '../range.ts'
 import { useChat } from '../store.ts'
 
 const count = (value: number, one: string, many: string) => `${value.toLocaleString('pt-BR')} ${value === 1 ? one : many}`
@@ -15,10 +15,15 @@ export function RangeBar({ onClose }: { onClose(): void }) {
   const last = entries[range.end]
   const messages = entries.slice(range.start, range.end + 1).filter((entry) => entry.kind === 'message').length
 
-  // The input keeps the seconds (step 1), so an end typed by hand still matches the export exactly.
-  const move = (from: string, to: string) => {
-    const next = rangeBetween(entries, from, to.length === 16 ? `${to}:59` : to)
-    if (next) setRange(next)
+  // Only the end that was edited moves: many entries share a minute, so the other end is kept by its
+  // index, not looked up again by its time. Without seconds, a typed end covers its whole minute.
+  const moveStart = (at: string) => {
+    const index = firstAtOrAfter(entries, at)
+    if (index !== -1) setRange(withStart(range, index))
+  }
+  const moveEnd = (at: string) => {
+    const index = lastAtOrBefore(entries, at.length === 16 ? `${at}:59` : at)
+    if (index !== -1) setRange(withEnd(range, index))
   }
 
   return (
@@ -32,7 +37,7 @@ export function RangeBar({ onClose }: { onClose(): void }) {
           value={first.at}
           min={entries[0].at}
           max={entries[entries.length - 1].at}
-          onChange={(event) => event.target.value && move(event.target.value, last.at)}
+          onChange={(event) => event.target.value && moveStart(event.target.value)}
           className="rounded-md border border-line bg-app px-2 py-1"
         />
       </label>
@@ -44,7 +49,7 @@ export function RangeBar({ onClose }: { onClose(): void }) {
           value={last.at}
           min={entries[0].at}
           max={entries[entries.length - 1].at}
-          onChange={(event) => event.target.value && move(first.at, event.target.value)}
+          onChange={(event) => event.target.value && moveEnd(event.target.value)}
           className="rounded-md border border-line bg-app px-2 py-1"
         />
       </label>

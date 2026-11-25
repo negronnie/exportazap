@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { parseExport } from '../import/parseExport.ts'
-import { fullRange, inRange, isFull, rangeBetween, withEnd, withStart } from './range.ts'
+import { firstAtOrAfter, fullRange, inRange, isFull, lastAtOrBefore, rangeBetween, withEnd, withStart } from './range.ts'
 
 const { entries } = parseExport(
   [
@@ -36,5 +36,19 @@ describe('range', () => {
 
   it('tells whether an entry is inside', () => {
     expect([0, 1, 2, 3, 4].map((index) => inRange({ start: 1, end: 3 }, index))).toEqual([false, true, true, true, false])
+  })
+})
+
+describe('range ends', () => {
+  it('finds the first entry at or after a moment and the last at or before it, sharing a minute', () => {
+    expect(firstAtOrAfter(entries, '2023-10-14T09:00:00')).toBe(0)
+    expect(lastAtOrBefore(entries, '2023-10-14T09:00:59')).toBe(1)
+    expect(firstAtOrAfter(entries, '2030-01-01T00:00:00')).toBe(-1)
+    expect(lastAtOrBefore(entries, '2020-01-01T00:00:00')).toBe(-1)
+  })
+
+  it('moves only the edited end when entries share a minute', () => {
+    // Range on the first entry alone; editing its start to the same minute keeps the end on it.
+    expect(withStart({ start: 0, end: 0 }, firstAtOrAfter(entries, '2023-10-14T09:00:00'))).toEqual({ start: 0, end: 0 })
   })
 })

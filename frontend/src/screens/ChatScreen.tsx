@@ -48,21 +48,31 @@ export function ChatScreen() {
   // The flash fades two seconds after each jump: the jump whose flash is over is remembered here.
   const [faded, setFaded] = useState(0)
   const list = useRef<VirtuosoHandle>(null)
+  // The rows change with the range only while the list shows just the range.
+  const shownStart = onlyRange ? range.start : null
+  const shownEnd = onlyRange ? range.end : null
   const rows = useMemo(() => {
     if (!imported) return []
     const { entries } = imported.parsed
-    return buildRows(onlyRange ? entries.slice(range.start, range.end + 1) : entries, self)
-  }, [imported, self, onlyRange, range])
+    return buildRows(shownStart === null || shownEnd === null ? entries : entries.slice(shownStart, shownEnd + 1), self)
+  }, [imported, self, shownStart, shownEnd])
 
-  // Jumps from the gallery, the search and the calendar land on the message and flash it.
+  // Jumps from the gallery, the search and the calendar land on the message and flash it. Each jump
+  // scrolls once: rows rebuilt later must not pull the list back to an old jump.
+  const scrolledJump = useRef(0)
   useEffect(() => {
-    if (!focus) return
+    if (!focus || focus.nonce === scrolledJump.current) return
     const index = rows.findIndex((row) => row.kind !== 'date' && rowEntry(row) === focus.index)
     if (index === -1) return
+    scrolledJump.current = focus.nonce
     list.current?.scrollToIndex({ index, align: 'center' })
+  }, [focus, rows])
+
+  useEffect(() => {
+    if (!focus) return
     const timer = setTimeout(() => setFaded(focus.nonce), 2000)
     return () => clearTimeout(timer)
-  }, [focus, rows])
+  }, [focus])
 
   if (!imported) return null
 
