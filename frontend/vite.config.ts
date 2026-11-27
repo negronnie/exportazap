@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
@@ -5,6 +6,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Unit tests only; the end-to-end flows in e2e/ run with Playwright.
+  test: { include: ['src/**/*.test.{ts,tsx}'] },
   plugins: [
     // The PDF is rendered in a Web Worker, which has no `window` for the Fast Refresh runtime.
     react({ exclude: /src\/export\/pdf\// }),
