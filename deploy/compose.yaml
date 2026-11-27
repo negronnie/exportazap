@@ -1,0 +1,25 @@
+# ExportaZap on the homelab (ADR 0008). Copy this folder to the server and run:
+#   docker compose pull && docker compose up -d
+# The app joins the homelab_proxy network, where nginx-proxy-manager publishes it through the
+# Cloudflare Tunnel. Nothing else is exposed, and there is no data to keep: the image is the site.
+name: exportazap
+
+services:
+  exportazap:
+    # The last release; IMAGE_TAG=vX.Y.Z on the command line runs another one.
+    image: negronnie/exportazap:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    # Static files only: the container needs to write nothing but nginx's scratch space.
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - homelab_proxy
+
+networks:
+  homelab_proxy:
+    external: true
