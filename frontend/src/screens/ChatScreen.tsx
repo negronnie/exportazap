@@ -1,4 +1,4 @@
-import { ArrowLeft, CalendarDays, Download, EyeOff, Moon, Scissors, Search, Sun } from 'lucide-react'
+import { ArrowLeft, Download, EyeOff, Scissors } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso'
 import { participantColor } from '../chat/colors.ts'
@@ -13,11 +13,13 @@ import { DatePicker } from '../chat/view/DatePicker.tsx'
 import { InfoPanel } from '../chat/view/InfoPanel.tsx'
 import { Lightbox } from '../chat/view/Lightbox.tsx'
 import { MessageBubble } from '../chat/view/MessageBubble.tsx'
+import { HeaderMenu } from '../chat/view/MessageMenu.tsx'
 import { RangeBar } from '../chat/view/RangeBar.tsx'
 import { RedactionBar } from '../chat/view/RedactionBar.tsx'
 import { SearchBar } from '../chat/view/SearchBar.tsx'
 import { ExportDialog } from '../export/ExportDialog.tsx'
 import { useExport } from '../export/useExport.ts'
+import { useWide } from '../layout.ts'
 import { useTheme } from '../theme.ts'
 
 function DateChip({ day }: { day: LocalDateTime }) {
@@ -33,7 +35,7 @@ function NoticeRow({ text }: { text: string }) {
   const redactor = useRedactor()
   return (
     <div className="flex justify-center px-6 pt-2">
-      <span className="max-w-[85%] rounded-lg bg-notice px-3 py-1.5 text-center text-[12.5px] text-muted shadow-sm md:max-w-[65%]">
+      <span className="max-w-[85%] rounded-lg bg-notice px-3 py-1.5 text-center text-[12.5px] text-muted shadow-sm @3xl:max-w-[65%]">
         {withEmoji(redactor.text(text), emoji, 'n')}
       </span>
     </div>
@@ -45,7 +47,10 @@ export function ChatScreen() {
     useChat()
   const display = useDisplayName()
   const { theme, toggle } = useTheme()
+  const wide = useWide()
   const [infoOpen, setInfoOpen] = useState(false)
+  // On a wide screen the info panel is always there: the name in the header brings it back to the start.
+  const [infoStart, setInfoStart] = useState(0)
   const [searching, setSearching] = useState(false)
   const [query, setQuery] = useState('')
   const [pickingDate, setPickingDate] = useState(false)
@@ -130,92 +135,88 @@ export function ChatScreen() {
   }
 
   return (
-    <main className="flex h-dvh flex-col">
-      {searching ? (
-        <SearchBar onQuery={setQuery} onClose={closeSearch} />
-      ) : (
-        <header className="relative flex items-center gap-1 bg-bar px-2 py-2 md:px-4">
-          <button type="button" onClick={backToSummary} aria-label="Voltar ao resumo" className="rounded-full p-2 text-muted hover:bg-chip">
-            <ArrowLeft size={20} />
-          </button>
-          <button type="button" onClick={() => setInfoOpen(true)} className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-0.5 text-left">
-            <Avatar
-              name={title}
-              color={partner ? participantColor(participants, partner) : '#8696a0'}
-              picture={partner ? avatars[partner] : undefined}
-            />
-            <span className="min-w-0 flex-1">
-              <span className="block truncate font-medium">{title}</span>
-              <span className="block truncate text-xs text-muted">
-                {summary.isGroup ? participants.map(display).join(', ') : 'Dados do contato'}
+    <main className="flex h-dvh justify-center bg-app">
+      {/* The chat itself: the whole screen on a phone, a phone's width on a wide screen. */}
+      <div className="@container flex min-w-0 flex-1 flex-col lg:w-[412px] lg:flex-none lg:border-x lg:border-line">
+        {searching ? (
+          <SearchBar onQuery={setQuery} onClose={closeSearch} />
+        ) : (
+          <header className="relative flex h-14 shrink-0 items-center gap-1 bg-bar px-2 @3xl:px-4">
+            <button type="button" onClick={backToSummary} aria-label="Voltar ao resumo" className="rounded-full p-2 text-muted hover:bg-chip">
+              <ArrowLeft size={20} />
+            </button>
+            <button
+              type="button"
+              onClick={() => (wide ? setInfoStart((start) => start + 1) : setInfoOpen(true))}
+              className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-0.5 text-left"
+            >
+              <Avatar
+                name={title}
+                color={partner ? participantColor(participants, partner) : '#8696a0'}
+                picture={partner ? avatars[partner] : undefined}
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-medium">{title}</span>
+                <span className="block truncate text-xs text-muted">
+                  {summary.isGroup ? participants.map(display).join(', ') : 'Dados do contato'}
+                </span>
               </span>
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setRangeOpen((open) => !open)}
-            aria-label="Recorte"
-            title="Recorte"
-            aria-pressed={rangeOpen}
-            className={`rounded-full p-2 hover:bg-chip ${fullChat ? 'text-muted' : 'text-accent-strong'}`}
-          >
-            <Scissors size={20} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setRedactionOpen((open) => !open)}
-            aria-label="Ocultação"
-            title="Ocultação"
-            aria-pressed={redactionOpen}
-            className={`rounded-full p-2 hover:bg-chip ${redacting ? 'text-accent-strong' : 'text-muted'}`}
-          >
-            <EyeOff size={20} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setExportOpen(true)}
-            className="flex items-center gap-1.5 rounded-full bg-accent px-3 py-1.5 text-sm font-medium text-on-accent hover:bg-accent-strong"
-          >
-            <Download size={16} />
-            <span className="hidden sm:inline">Exportar</span>
-          </button>
-          <button type="button" onClick={() => setSearching(true)} aria-label="Buscar na conversa" className="rounded-full p-2 text-muted hover:bg-chip">
-            <Search size={20} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setPickingDate((open) => !open)}
-            aria-label="Ir para uma data"
-            aria-expanded={pickingDate}
-            className="rounded-full p-2 text-muted hover:bg-chip"
-          >
-            <CalendarDays size={20} />
-          </button>
-          <button
-            type="button"
-            onClick={toggle}
-            aria-label={theme === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'}
-            className="rounded-full p-2 text-muted hover:bg-chip"
-          >
-            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
-          {pickingDate && <DatePicker entries={imported.parsed.entries} onPick={jumpTo} onClose={() => setPickingDate(false)} />}
-        </header>
-      )}
-      {rangeOpen && <RangeBar onClose={() => setRangeOpen(false)} />}
-      {redactionOpen && <RedactionBar onClose={() => setRedactionOpen(false)} />}
+            </button>
+            <button
+              type="button"
+              onClick={() => setRangeOpen((open) => !open)}
+              aria-label="Recorte"
+              title="Recorte"
+              aria-pressed={rangeOpen}
+              className={`rounded-full p-2 hover:bg-chip ${fullChat ? 'text-muted' : 'text-accent-strong'}`}
+            >
+              <Scissors size={20} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setRedactionOpen((open) => !open)}
+              aria-label="Ocultação"
+              title="Ocultação"
+              aria-pressed={redactionOpen}
+              className={`rounded-full p-2 hover:bg-chip ${redacting ? 'text-accent-strong' : 'text-muted'}`}
+            >
+              <EyeOff size={20} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setExportOpen(true)}
+              aria-label="Exportar"
+              title="Exportar"
+              className="flex items-center gap-1.5 rounded-full bg-accent p-2 text-sm font-medium text-on-accent hover:bg-accent-strong @md:px-3 @md:py-1.5"
+            >
+              <Download size={16} />
+              <span className="hidden @md:inline">Exportar</span>
+            </button>
+            <HeaderMenu
+              actions={[
+                { label: 'Buscar na conversa', run: () => setSearching(true) },
+                { label: 'Ir para uma data', run: () => setPickingDate(true) },
+                { label: theme === 'dark' ? 'Usar tema claro' : 'Usar tema escuro', run: toggle },
+              ]}
+            />
+            {pickingDate && <DatePicker entries={imported.parsed.entries} onPick={jumpTo} onClose={() => setPickingDate(false)} />}
+          </header>
+        )}
+        {rangeOpen && <RangeBar onClose={() => setRangeOpen(false)} />}
+        {redactionOpen && <RedactionBar onClose={() => setRedactionOpen(false)} />}
 
-      <div className="bg-wallpaper min-h-0 flex-1">
-        <Virtuoso
-          ref={list}
-          data={rows}
-          computeItemKey={(_, row) => row.key}
-          itemContent={(_, row) => renderRow(row)}
-          components={{ Footer: () => <div className="h-3" /> }}
-          className="h-full"
-        />
+        <div className="bg-wallpaper min-h-0 flex-1">
+          <Virtuoso
+            ref={list}
+            data={rows}
+            computeItemKey={(_, row) => row.key}
+            itemContent={(_, row) => renderRow(row)}
+            components={{ Footer: () => <div className="h-3" /> }}
+            className="h-full"
+          />
+        </div>
       </div>
-      {infoOpen && <InfoPanel onClose={() => setInfoOpen(false)} />}
+      {wide ? <InfoPanel key={infoStart} /> : infoOpen && <InfoPanel onClose={() => setInfoOpen(false)} />}
       <Lightbox />
       {exportOpen && (
         <ExportDialog

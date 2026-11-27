@@ -1,24 +1,40 @@
-import { ChevronDown } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { ChevronDown, EllipsisVertical } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { useDismiss } from './dismiss.ts'
 
 export interface MenuAction {
   label: string
   run(): void
 }
 
+function MenuList({ actions, className, onPick }: { actions: MenuAction[]; className: string; onPick: () => void }) {
+  return (
+    <ul role="menu" className={`absolute w-56 rounded-md bg-panel py-1.5 text-sm shadow-xl ${className}`}>
+      {actions.map((action) => (
+        <li key={action.label}>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              onPick()
+              action.run()
+            }}
+            className="w-full px-4 py-2 text-left hover:bg-chip"
+          >
+            {action.label}
+          </button>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 /** The little arrow in the corner of a bubble that opens its actions, as in WhatsApp. */
 export function MessageMenu({ actions, outgoing }: { actions: MenuAction[]; outgoing: boolean }) {
   const [open, setOpen] = useState(false)
   const box = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    const close = (event: Event) => {
-      if (!box.current?.contains(event.target as Node)) setOpen(false)
-    }
-    document.addEventListener('pointerdown', close)
-    return () => document.removeEventListener('pointerdown', close)
-  }, [open])
+  const close = () => setOpen(false)
+  useDismiss(box, open, close)
 
   return (
     <div ref={box} className="absolute top-0.5 right-0.5 z-10">
@@ -34,25 +50,30 @@ export function MessageMenu({ actions, outgoing }: { actions: MenuAction[]; outg
       >
         <ChevronDown size={18} />
       </button>
-      {open && (
-        <ul role="menu" className={`absolute top-6 w-56 rounded-md bg-panel py-1.5 text-sm shadow-xl ${outgoing ? 'right-0' : 'left-0'}`}>
-          {actions.map((action) => (
-            <li key={action.label}>
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => {
-                  setOpen(false)
-                  action.run()
-                }}
-                className="w-full px-4 py-2 text-left hover:bg-chip"
-              >
-                {action.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      {open && <MenuList actions={actions} className={`top-6 ${outgoing ? 'right-0' : 'left-0'}`} onPick={close} />}
+    </div>
+  )
+}
+
+/** The three dots of the chat header, as in WhatsApp: the actions that do not fit beside the name. */
+export function HeaderMenu({ actions }: { actions: MenuAction[] }) {
+  const [open, setOpen] = useState(false)
+  const box = useRef<HTMLDivElement>(null)
+  const close = () => setOpen(false)
+  useDismiss(box, open, close)
+
+  return (
+    <div ref={box} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-label="Mais opções"
+        aria-expanded={open}
+        className="rounded-full p-2 text-muted hover:bg-chip"
+      >
+        <EllipsisVertical size={20} />
+      </button>
+      {open && <MenuList actions={actions} className="top-full right-0 z-30 mt-1" onPick={close} />}
     </div>
   )
 }

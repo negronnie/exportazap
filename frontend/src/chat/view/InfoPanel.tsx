@@ -179,7 +179,8 @@ function ParticipantView({ name, stats }: { name: string; stats: ActivityStats }
   )
 }
 
-export function InfoPanel({ onClose }: { onClose: () => void }) {
+/** Over the chat on a phone, closed with onClose; docked beside the phone-sized chat on a wide screen. */
+export function InfoPanel({ onClose }: { onClose?: () => void }) {
   const { imported, self, avatars, jumpTo } = useChat()
   const display = useDisplayName()
   const [view, setView] = useState<View>({ kind: 'chat' })
@@ -196,25 +197,34 @@ export function InfoPanel({ onClose }: { onClose: () => void }) {
   const title = partner ? display(partner) : summary.title
   const jump = (message: Message) => {
     jumpTo(message.index)
-    onClose()
+    onClose?.()
   }
 
   const heading =
     view.kind === 'participant' ? 'Dados do participante' : view.kind === 'gallery' ? 'Mídia, links e docs' : summary.isGroup ? 'Dados do grupo' : 'Dados do contato'
 
   return (
-    <aside className="fixed inset-0 z-40 flex flex-col bg-app shadow-xl md:left-auto md:w-[420px]" aria-label={heading}>
-      <header className="flex items-center gap-3 bg-bar px-3 py-3">
-        {view.kind === 'chat' ? (
-          <button type="button" onClick={onClose} aria-label="Fechar" className="rounded-full p-2 text-muted hover:bg-chip">
-            <X size={20} />
-          </button>
-        ) : (
+    <aside
+      className={
+        onClose
+          ? 'fixed inset-0 z-40 flex flex-col bg-app shadow-xl md:left-auto md:w-[420px]'
+          : 'flex h-full w-[400px] shrink-0 flex-col border-r border-line bg-app'
+      }
+      aria-label={heading}
+    >
+      <header className="flex h-14 shrink-0 items-center gap-3 bg-bar px-3">
+        {view.kind !== 'chat' ? (
           <button type="button" onClick={() => setView({ kind: 'chat' })} aria-label="Voltar" className="rounded-full p-2 text-muted hover:bg-chip">
             <ArrowLeft size={20} />
           </button>
+        ) : (
+          onClose && (
+            <button type="button" onClick={onClose} aria-label="Fechar" className="rounded-full p-2 text-muted hover:bg-chip">
+              <X size={20} />
+            </button>
+          )
         )}
-        <h2 className="font-medium">{heading}</h2>
+        <h2 className={`font-medium ${onClose || view.kind !== 'chat' ? '' : 'px-2'}`}>{heading}</h2>
       </header>
 
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pb-6">
