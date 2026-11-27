@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { Entry } from '../model.ts'
+import { useDismiss } from './dismiss.ts'
 
 const WEEKDAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
 const monthName = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' })
@@ -25,6 +26,8 @@ export function DatePicker({ entries, onPick, onClose }: Props) {
   }, [entries])
   const months = useMemo(() => [...new Set([...days.keys()].map((day) => day.slice(0, 7)))], [days])
   const [month, setMonth] = useState(months[0] ?? '')
+  const box = useRef<HTMLDivElement>(null)
+  useDismiss(box, true, onClose)
   if (!month) return null
 
   const [year, monthNumber] = month.split('-').map(Number)
@@ -33,7 +36,7 @@ export function DatePicker({ entries, onPick, onClose }: Props) {
   const position = months.indexOf(month)
 
   return (
-    <div className="absolute top-full right-2 z-30 mt-1 w-72 rounded-xl bg-panel p-3 shadow-xl" role="dialog" aria-label="Ir para uma data">
+    <div ref={box} className="absolute top-full right-2 z-30 mt-1 w-72 rounded-xl bg-panel p-3 shadow-xl" role="dialog" aria-label="Ir para uma data">
       <div className="mb-2 flex items-center justify-between">
         <button type="button" onClick={() => setMonth(months[position - 1])} disabled={position <= 0} aria-label="Mês anterior" className="rounded-full p-1.5 hover:bg-chip disabled:opacity-30">
           <ChevronLeft size={18} />

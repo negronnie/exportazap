@@ -89,7 +89,7 @@ export function ViewerBubble({ entry, path, isGroup, emoji, query, highlighted, 
   if (entry.kind === 'notice') {
     return (
       <div className="flex justify-center px-6 pt-2">
-        <span className="max-w-[85%] rounded-lg bg-notice px-3 py-1.5 text-center text-[12.5px] text-muted shadow-sm md:max-w-[65%]">
+        <span className="max-w-[85%] rounded-lg bg-notice px-3 py-1.5 text-center text-[12.5px] text-muted shadow-sm @3xl:max-w-[65%]">
           {packagedText(entry.text, query, emoji, 'n')}
         </span>
       </div>
@@ -97,8 +97,8 @@ export function ViewerBubble({ entry, path, isGroup, emoji, query, highlighted, 
   }
   const time = formatTime(entry.at)
   return (
-    <div className={`flex px-3 pt-1 md:px-[6%] ${entry.outgoing ? 'justify-end' : 'justify-start'} ${highlighted ? 'bg-accent/20' : ''}`}>
-      <div className={`max-w-[85%] rounded-lg px-2 pt-1.5 pb-1 text-[14.2px] leading-[19px] shadow-sm md:max-w-[65%] ${entry.outgoing ? 'bg-bubble-out' : 'bg-bubble-in'}`}>
+    <div className={`flex px-3 pt-1 @3xl:px-[6%] ${entry.outgoing ? 'justify-end' : 'justify-start'} ${highlighted ? 'bg-accent/20' : ''}`}>
+      <div className={`max-w-[85%] rounded-lg px-2 pt-1.5 pb-1 text-[14.2px] leading-[19px] shadow-sm @3xl:max-w-[65%] ${entry.outgoing ? 'bg-bubble-out' : 'bg-bubble-in'}`}>
         {isGroup && !entry.outgoing && (
           <p className="mb-0.5 text-[12.8px] font-medium" style={{ color: entry.kind === 'message' ? entry.authorColor : undefined }}>
             {withEmoji(entry.author, emoji, 'a', false, 'emoji/')}
