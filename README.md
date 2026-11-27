@@ -8,7 +8,7 @@ ExportaZap transforma uma conversa exportada do WhatsApp (o `.zip` ou o `.txt`) 
 
 Tudo acontece no navegador de quem usa: a conversa não é enviada para nenhum servidor, o site funciona offline depois da primeira visita e uma política de segurança impede o navegador de conectar a qualquer outro endereço. Antes de compartilhar, dá para recortar o trecho, dar apelidos aos participantes, mascarar os números de telefone e ocultar mensagens.
 
-Roda hospedado, para acessar pelo navegador, e também pode ser hospedado localmente: o código é aberto, sob a [licença MIT](./LICENSE).
+Roda hospedado, em https://exportazap.negronnie.com.br, e também pode ser hospedado localmente: o código é aberto, sob a [licença MIT](./LICENSE).
 
 ## Estrutura
 
@@ -81,7 +81,7 @@ Os emoji são do [Noto Emoji](https://github.com/googlefonts/noto-emoji), do Goo
 ## Status
 
 - Fase 0 — definição do produto e estrutura do repositório: concluída.
-- v1 — a conversa no navegador, com as três saídas e a versão pública: em andamento ([milestone v1](https://github.com/negronnie/exportazap/milestone/2)).
+- v1 — a conversa no navegador, com as três saídas e a versão pública: no ar desde a `v0.1.0` ([milestone v1](https://github.com/negronnie/exportazap/milestone/2)).
 - v2 — versão hospedada, com link compartilhável, e o que ficou de fora da v1 ([milestone v2](https://github.com/negronnie/exportazap/milestone/1)).
 
 O roadmap completo está nas issues de épico do repositório.
