@@ -35,7 +35,7 @@ function NoticeRow({ text }: { text: string }) {
   const redactor = useRedactor()
   return (
     <div className="flex justify-center px-6 pt-2">
-      <span className="max-w-[85%] rounded-lg bg-notice px-3 py-1.5 text-center text-[12.5px] text-muted shadow-sm @3xl:max-w-[65%]">
+      <span className="max-w-[85%] rounded-lg bg-notice px-3 py-1.5 text-center text-[12.5px] text-muted shadow-sm">
         {withEmoji(redactor.text(text), emoji, 'n')}
       </span>
     </div>
@@ -136,12 +136,12 @@ export function ChatScreen() {
 
   return (
     <main className="flex h-dvh justify-center bg-app">
-      {/* The chat itself: the whole screen on a phone, a phone's width on a wide screen. */}
-      <div className="@container flex min-w-0 flex-1 flex-col lg:w-[412px] lg:flex-none lg:border-x lg:border-line">
+      {/* The chat itself, always a phone's width: the whole screen only on a phone. */}
+      <div className="flex w-full max-w-[412px] min-w-0 flex-col border-line min-[26rem]:border-x">
         {searching ? (
           <SearchBar onQuery={setQuery} onClose={closeSearch} />
         ) : (
-          <header className="relative flex h-14 shrink-0 items-center gap-1 bg-bar px-2 @3xl:px-4">
+          <header className="relative flex h-14 shrink-0 items-center gap-1 bg-bar px-2">
             <button type="button" onClick={backToSummary} aria-label="Voltar ao resumo" className="rounded-full p-2 text-muted hover:bg-chip">
               <ArrowLeft size={20} />
             </button>
@@ -187,10 +187,9 @@ export function ChatScreen() {
               onClick={() => setExportOpen(true)}
               aria-label="Exportar"
               title="Exportar"
-              className="flex items-center gap-1.5 rounded-full bg-accent p-2 text-sm font-medium text-on-accent hover:bg-accent-strong @md:px-3 @md:py-1.5"
+              className="rounded-full bg-accent p-2 text-on-accent hover:bg-accent-strong"
             >
-              <Download size={16} />
-              <span className="hidden @md:inline">Exportar</span>
+              <Download size={20} />
             </button>
             <HeaderMenu
               actions={[

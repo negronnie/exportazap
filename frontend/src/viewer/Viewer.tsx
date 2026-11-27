@@ -23,7 +23,7 @@ function searchable(entry: ExportEntry): string {
   return foldQuery([entry.text, entry.attachment?.label ?? '', entry.poll?.question ?? ''].join('\n'))
 }
 
-/** Over the chat on a phone, closed with onClose; docked beside the phone-sized chat on a wide screen. */
+/** Over the chat on a narrow screen, closed with onClose; docked beside it when the screen fits both. */
 function InfoPanel({ data, onClose }: { data: ViewerData; onClose?: () => void }) {
   const doc = data.document
   const byAuthor = new Map<string, number>()
@@ -43,7 +43,7 @@ function InfoPanel({ data, onClose }: { data: ViewerData; onClose?: () => void }
     <aside
       className={
         onClose
-          ? 'fixed inset-0 z-40 flex flex-col bg-app shadow-xl md:left-auto md:w-[420px]'
+          ? 'fixed inset-y-0 left-1/2 z-40 flex w-full max-w-[412px] -translate-x-1/2 flex-col bg-app shadow-xl'
           : 'flex h-full w-[400px] shrink-0 flex-col border-r border-line bg-app'
       }
     >
@@ -143,8 +143,8 @@ export function Viewer({ data }: { data: ViewerData }) {
 
   return (
     <main className="flex h-dvh justify-center bg-app">
-      {/* The chat itself: the whole screen on a phone, a phone's width on a wide screen. */}
-      <div className="@container flex min-w-0 flex-1 flex-col lg:w-[412px] lg:flex-none lg:border-x lg:border-line">
+      {/* The chat itself, always a phone's width: the whole screen only on a phone. */}
+      <div className="flex w-full max-w-[412px] min-w-0 flex-col border-line min-[26rem]:border-x">
         {searching ? (
           <div className="flex h-14 shrink-0 items-center gap-1 bg-bar px-2">
             <button
