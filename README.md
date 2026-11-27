@@ -1,6 +1,6 @@
 # ExportaZap
 
-<a href="https://github.com/negronnie/exportazap/releases/latest"><img alt="Versão" src="https://img.shields.io/badge/vers%C3%A3o-v0.1.0-6366f1"></a>
+<a href="https://github.com/negronnie/exportazap/releases/latest"><img alt="Versão" src="https://img.shields.io/badge/vers%C3%A3o-v0.1.1-6366f1"></a>
 <a href="https://github.com/negronnie/exportazap/actions/workflows/release.yml"><img alt="Gerar Release e Tag" src="https://github.com/negronnie/exportazap/actions/workflows/release.yml/badge.svg"></a>
 <a href="https://github.com/negronnie/exportazap/actions/workflows/images.yml"><img alt="Publicar Imagens" src="https://github.com/negronnie/exportazap/actions/workflows/images.yml/badge.svg"></a>
 

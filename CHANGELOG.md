@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.1] - 2026-11-27
+
+### Documentação
+
+- *(implantacao)* Endereço público exportazap.negronnie.com.br (#66)
+
+### Funcionalidades
+
+- *(conversa)* Largura de celular com os dados ao lado (#67)
 ## [0.1.0] - 2026-11-27
 
 ### Documentação
@@ -31,5 +40,6 @@
 ### Testes
 
 - *(e2e)* Fluxos principais com Playwright no CI (#63)
+[0.1.1]: https://github.com/negronnie/exportazap/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/negronnie/exportazap/releases/tag/v0.1.0
 
