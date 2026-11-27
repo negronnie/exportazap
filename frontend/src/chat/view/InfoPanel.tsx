@@ -179,7 +179,7 @@ function ParticipantView({ name, stats }: { name: string; stats: ActivityStats }
   )
 }
 
-/** Over the chat on a phone, closed with onClose; docked beside the phone-sized chat on a wide screen. */
+/** Over the chat on a narrow screen, closed with onClose; docked beside it when the screen fits both. */
 export function InfoPanel({ onClose }: { onClose?: () => void }) {
   const { imported, self, avatars, jumpTo } = useChat()
   const display = useDisplayName()
@@ -207,7 +207,7 @@ export function InfoPanel({ onClose }: { onClose?: () => void }) {
     <aside
       className={
         onClose
-          ? 'fixed inset-0 z-40 flex flex-col bg-app shadow-xl md:left-auto md:w-[420px]'
+          ? 'fixed inset-y-0 left-1/2 z-40 flex w-full max-w-[412px] -translate-x-1/2 flex-col bg-app shadow-xl'
           : 'flex h-full w-[400px] shrink-0 flex-col border-r border-line bg-app'
       }
       aria-label={heading}

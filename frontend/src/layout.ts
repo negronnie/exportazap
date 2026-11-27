@@ -1,9 +1,10 @@
-// From the lg breakpoint on, the chat keeps a phone's width, as people see it in WhatsApp, and the
-// contact or group info stays docked at its right instead of covering it.
+// The chat always keeps a phone's width, as people see it in WhatsApp. When the screen fits that
+// and the info panel side by side (412 + 400 px), the contact or group info stays docked at the
+// chat's right; on a narrower screen it opens over the chat.
 
 import { useSyncExternalStore } from 'react'
 
-const WIDE = '(min-width: 64rem)'
+const WIDE = '(min-width: 52rem)'
 
 const media = () => (typeof window !== 'undefined' ? window.matchMedia?.(WIDE) : undefined)
 

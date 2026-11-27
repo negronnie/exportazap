@@ -40,7 +40,7 @@ export function SearchBar({ onQuery, onClose }: Props) {
   }
 
   return (
-    <div className="flex items-center gap-1 bg-bar px-2 py-2 @3xl:px-4">
+    <div className="flex items-center gap-1 bg-bar px-2 py-2">
       <button type="button" onClick={onClose} aria-label="Fechar busca" className="rounded-full p-2 text-muted hover:bg-chip">
         <ArrowLeft size={20} />
       </button>

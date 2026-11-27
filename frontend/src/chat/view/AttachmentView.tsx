@@ -92,21 +92,21 @@ function Present({ message, source, url }: { message: Message; source: SourceExp
     case 'image':
       return (
         <button type="button" onClick={() => openLightbox({ url, kind: 'image', fileName })} className="block">
-          <img src={url} alt="" className="max-h-80 w-auto max-w-full rounded-md object-cover @3xl:max-w-80" />
+          <img src={url} alt="" className="max-h-80 w-auto max-w-full rounded-md object-cover" />
         </button>
       )
     case 'video':
       return (
         <button type="button" onClick={() => openLightbox({ url, kind: 'video', fileName })} className="relative block">
           {/* #t=0.1 makes browsers paint the first frame as the thumbnail. */}
-          <video src={`${url}#t=0.1`} preload="metadata" muted playsInline className="max-h-80 max-w-full rounded-md @3xl:max-w-80" />
+          <video src={`${url}#t=0.1`} preload="metadata" muted playsInline className="max-h-80 max-w-full rounded-md" />
           <span className="absolute inset-0 m-auto flex size-12 items-center justify-center rounded-full bg-black/50 text-white">
             <Play size={24} />
           </span>
         </button>
       )
     case 'gif':
-      return <video src={url} autoPlay loop muted playsInline className="max-h-80 max-w-full rounded-md @3xl:max-w-80" />
+      return <video src={url} autoPlay loop muted playsInline className="max-h-80 max-w-full rounded-md" />
     case 'sticker':
       return <img src={url} alt="" className="size-36 object-contain" />
     case 'audio':

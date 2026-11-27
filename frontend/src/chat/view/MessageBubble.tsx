@@ -113,9 +113,9 @@ export function MessageBubble({ message, outgoing, firstOfRun, authorColor, quer
   )
 
   return (
-    <div className={`flex px-3 @3xl:px-[6%] ${outgoing ? 'justify-end' : 'justify-start'} ${firstOfRun ? 'pt-2' : 'pt-0.5'}`}>
+    <div className={`flex px-3 ${outgoing ? 'justify-end' : 'justify-start'} ${firstOfRun ? 'pt-2' : 'pt-0.5'}`}>
       <div
-        className={`group relative max-w-[85%] text-[14.2px] ${hidden ? 'opacity-50' : ''} leading-[19px] @3xl:max-w-[65%] ${
+        className={`group relative max-w-[85%] text-[14.2px] ${hidden ? 'opacity-50' : ''} leading-[19px] ${
           sticker
             ? ''
             : `rounded-lg px-1.5 pt-1.5 pb-2 shadow-sm ${outgoing ? 'bg-bubble-out' : 'bg-bubble-in'} ${
