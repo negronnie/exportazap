@@ -1,6 +1,6 @@
 # Implantação no homelab
 
-Coloca o ExportaZap no ar em `exportazap.com.br`, a partir da imagem `negronnie/exportazap` do Docker Hub (ADR 0008). O site é estático: não há banco, segredo nem dado para guardar no servidor.
+Coloca o ExportaZap no ar em https://exportazap.negronnie.com.br, a partir da imagem `negronnie/exportazap` do Docker Hub (ADR 0008). O site é estático: não há banco, segredo nem dado para guardar no servidor. O domínio próprio `exportazap.com.br` fica para depois ([#65](https://github.com/negronnie/exportazap/issues/65)).
 
 ## 1. Versões e imagens
 
@@ -23,9 +23,9 @@ O que o repositório precisa (Settings → Secrets and variables → Actions):
 
 ## 2. Primeira subida
 
-No servidor do homelab, que já tem o nginx-proxy-manager na rede `homelab_proxy`:
+No servidor do homelab, que já tem o nginx-proxy-manager e o `cloudflared` na rede `homelab_proxy`:
 
-1. Copie a pasta `deploy/` do repositório para o servidor, por exemplo `homelab/exportazap/`.
+1. Copie a pasta `deploy/` do repositório para o servidor, em `homelab/exportazap/`.
 2. Suba:
 
    ```bash
@@ -33,8 +33,8 @@ No servidor do homelab, que já tem o nginx-proxy-manager na rede `homelab_proxy
    docker compose up -d
    ```
 
-3. No nginx-proxy-manager, crie o proxy host `exportazap.com.br` (e `www.exportazap.com.br`) apontando para `http://exportazap:80`, o nome do serviço na rede `homelab_proxy`.
-4. No Cloudflare, adicione os mesmos nomes ao túnel do homelab, apontando para o nginx-proxy-manager, como nos outros sites.
+3. No nginx-proxy-manager (porta 81), crie o proxy host `exportazap.negronnie.com.br` apontando para `http` · `exportazap` · `80`, o nome do serviço na rede `homelab_proxy`. Ligue *Block Common Exploits* e deixe o SSL desligado: o HTTPS termina no Cloudflare, como nos outros sites.
+4. No Cloudflare, em *Networking → Tunnels → homelab → Routes → Add route → Published application*, adicione o hostname `exportazap.negronnie.com.br` com o serviço `http://nginx-proxy:80`. O registro DNS (CNAME para o túnel) é criado junto.
 
 O container roda com o sistema de arquivos só de leitura e sem novos privilégios; ele só escreve no espaço temporário do nginx.
 
@@ -58,12 +58,14 @@ A variável na linha de comando vale mais que o padrão do compose; o próximo `
 ## 5. Conferir
 
 ```bash
-curl -sI https://exportazap.com.br/ | grep -i content-security-policy
+curl -sI https://exportazap.negronnie.com.br/ | grep -i content-security-policy
 ```
 
 - A resposta traz a política que só permite a própria origem (`default-src 'self'`).
 - O site abre, importa uma exportação e gera as saídas; a aba Rede do navegador não mostra nenhuma requisição para fora.
-- `https://exportazap.com.br/#privacidade` abre a página de privacidade.
+- `https://exportazap.negronnie.com.br/#privacidade` abre a página de privacidade.
+
+O Cloudflare injeta no HTML um script de detecção de bots, configurado para toda a zona `negronnie.com.br`. A CSP o bloqueia, e o site funciona igual. Na primeira visita, antes do service worker, isso pode aparecer como um aviso de CSP no console; depois a página vem do cache, sem o script.
 
 ## 6. Hospedar por conta própria
 
